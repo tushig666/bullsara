@@ -1,3 +1,64 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "lamborghini-urus-1",
+      "description": "Front view of a yellow Lamborghini Urus",
+      "imageUrl": "https://images.unsplash.com/photo-1549458395-e14f2e6d39c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxMYW1ib3JnaGluaSUyMFVydXN8ZW58MHx8fHwxNzcxMTM1NjIzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Lamborghini Urus"
+    },
+    {
+      "id": "lamborghini-urus-2",
+      "description": "Side profile of a yellow Lamborghini Urus",
+      "imageUrl": "https://images.unsplash.com/photo-1754944388132-d73f978ac355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxMYW1ib3JnaGluaSUyMFVydXMlMjBzaWRlfGVufDB8fHx8MTc3MTEzNTYyM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Lamborghini Urus side"
+    },
+    {
+      "id": "lamborghini-urus-3",
+      "description": "Interior of a Lamborghini Urus",
+      "imageUrl": "https://images.unsplash.com/photo-1659946431383-a3a173eabaea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxMYW1ib3JnaGluaSUyMGludGVyaW9yfGVufDB8fHx8MTc3MTEzNTYyM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Lamborghini interior"
+    },
+    {
+      "id": "porsche-911-1",
+      "description": "Rear view of a silver Porsche 911 GT3",
+      "imageUrl": "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxQb3JzY2hlJTIwOTExfGVufDB8fHx8MTc3MTEyOTAxOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Porsche 911"
+    },
+    {
+      "id": "porsche-911-2",
+      "description": "Front-side view of a silver Porsche 911 GT3",
+      "imageUrl": "https://images.unsplash.com/photo-1665901227266-9036ae58374c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxQb3JzY2hlJTIwOTExJTIwZnJvbnR8ZW58MHx8fHwxNzcxMTM1NjIzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Porsche 911 front"
+    },
+    {
+      "id": "porsche-911-3",
+      "description": "Dashboard of a Porsche 911",
+      "imageUrl": "https://images.unsplash.com/photo-1637087867436-a2994e9799ac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxQb3JzY2hlJTIwaW50ZXJpb3J8ZW58MHx8fHwxNzcxMTM1NjIzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Porsche interior"
+    },
+    {
+      "id": "mercedes-g-wagon-1",
+      "description": "Black Mercedes G-Wagon in a city",
+      "imageUrl": "https://images.unsplash.com/photo-1728060839244-bd9428ca05ac?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxNZXJjZWRlcyUyMEctV2Fnb258ZW58MHx8fHwxNzcxMTM1NjIzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Mercedes G-Wagon"
+    },
+    {
+      "id": "mercedes-g-wagon-2",
+      "description": "Side view of a black Mercedes G-Wagon",
+      "imageUrl": "https://images.unsplash.com/photo-1733074148183-a5e4ba7a1ee1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxHLVdhZ29uJTIwc2lkZXxlbnwwfHx8fDE3NzExMzU2MjN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "G-Wagon side"
+    },
+    {
+      "id": "mercedes-g-wagon-3",
+      "description": "Luxurious interior of a Mercedes G-Wagon",
+      "imageUrl": "https://images.unsplash.com/photo-1666360546000-33d28ba2a323?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxHLVdhZ29uJTIwaW50ZXJpb3J8ZW58MHx8fHwxNzcxMTM1NjIzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "G-Wagon interior"
+    },
+    {
+      "id": "qpay-qr",
+      "description": "Placeholder for a QPay QR code",
+      "imageUrl": "https://images.unsplash.com/photo-1662383729882-e03ce8e00887?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxRUiUyMGNvZGV8ZW58MHx8fHwxNzcxMDUxMDQxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "QR code"
+    }
+  ]
 }
