@@ -35,8 +35,10 @@ import { redirect } from 'next/navigation';
 const emailSchema = z.string().email();
 const passwordSchema = z.string().min(6);
 
+const authCredentialsSchema = z.object({ email: emailSchema, password: passwordSchema });
+
 // Auth Actions
-export async function signUpUser({ email, password }: z.infer<typeof z.object({ email: emailSchema, password: passwordSchema })>) {
+export async function signUpUser({ email, password }: z.infer<typeof authCredentialsSchema>) {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -51,7 +53,7 @@ export async function signUpUser({ email, password }: z.infer<typeof z.object({ 
   }
 }
 
-export async function signInUser({ email, password }: z.infer<typeof z.object({ email: emailSchema, password: passwordSchema })>) {
+export async function signInUser({ email, password }: z.infer<typeof authCredentialsSchema>) {
   try {
     await signInWithEmailAndPassword(auth, email, password);
     return { success: true };
