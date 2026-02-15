@@ -11,8 +11,9 @@ import Link from 'next/link';
 import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { signInUser } from '@/app/actions';
 import { useState } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase/client';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'И-мэйл хаягаа зөв оруулна уу.' }),
@@ -34,20 +35,20 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    const result = await signInUser(values);
-
-    if (result.success) {
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      // The AuthListener will handle creating the session cookie.
       toast({
         title: UI.GENERAL.SUCCESS,
         description: UI.AUTH.LOGIN_SUCCESS,
       });
       router.push('/');
-      router.refresh(); // To update header
-    } else {
+      router.refresh(); // To update header by re-fetching server components
+    } catch (error) {
       toast({
         variant: 'destructive',
         title: UI.GENERAL.ERROR,
-        description: result.error,
+        description: "Нэвтрэх нэр эсвэл нууц үг буруу байна.",
       });
       setIsSubmitting(false);
     }

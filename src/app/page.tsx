@@ -61,11 +61,19 @@ export default function Home() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
+        // Only show splash screen on first visit per session
+        if (typeof window !== 'undefined' && sessionStorage.getItem('splashShown')) {
             setShowSplash(false);
-        }, 5000);
+        } else {
+            const timer = setTimeout(() => {
+                setShowSplash(false);
+                if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('splashShown', 'true');
+                }
+            }, 2000); // Show for 2 seconds
 
-        return () => clearTimeout(timer);
+            return () => clearTimeout(timer);
+        }
     }, []);
 
     useEffect(() => {

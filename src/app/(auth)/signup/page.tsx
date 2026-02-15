@@ -11,8 +11,10 @@ import Link from 'next/link';
 import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { signUpUser } from '@/app/actions';
 import { useState } from 'react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase/client';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'И-мэйл хаягаа зөв оруулна уу.' }),
@@ -34,19 +36,29 @@ export default function SignupPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-    const result = await signUpUser(values);
-
-    if (result.success) {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+      
+      // Create the user profile in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        email: user.email,
+        role: 'user',
+        createdAt: serverTimestamp(),
+      });
+      
+      // The AuthListener will handle cookie creation. The user will be signed in client-side.
+      // We can then redirect to login, or directly to the main page. The prompt directs to login.
       toast({
         title: UI.GENERAL.SUCCESS,
         description: UI.AUTH.SIGNUP_SUCCESS,
       });
       router.push('/login');
-    } else {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: UI.GENERAL.ERROR,
-        description: result.error,
+        description: error.message,
       });
       setIsSubmitting(false);
     }
