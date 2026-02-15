@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Lottery } from '@/lib/types';
-import Link from 'next/link';
+import { Logo } from '@/components/ui/logo';
 
 function SplashScreen() {
     return (
@@ -18,9 +18,7 @@ function SplashScreen() {
             transition={{ duration: 0.5 }}
             className="fixed inset-0 bg-background z-[100] flex flex-col items-center justify-center text-center p-4"
         >
-            <Link href="/" className="font-bold text-6xl font-headline mb-4">
-                Bullsara
-            </Link>
+            <Logo className="h-20 w-[300px] mb-4" />
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
                 {UI.HOME.SUBTITLE}
             </p>
@@ -46,8 +44,8 @@ function LotteryGridSkeleton() {
                 <div key={i} className="flex flex-col space-y-3">
                     <Skeleton className="h-[250px] w-full rounded-xl" />
                     <div className="space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
                         <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-1/4" />
                     </div>
                 </div>
             ))}
