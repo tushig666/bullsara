@@ -5,17 +5,11 @@ import { getLotteries } from '@/app/actions';
 import { UI } from '@/lib/i18n';
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { motion, AnimatePresence } from 'framer-motion';
 import type { Lottery } from '@/lib/types';
-import { Logo } from '@/components/ui/logo';
 
 function SplashScreen() {
     return (
-        <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
+        <div
             className="fixed inset-0 bg-background z-[100] flex flex-col items-center justify-center text-center p-4"
         >
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-primary-foreground mb-4 font-headline">
@@ -24,7 +18,7 @@ function SplashScreen() {
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
                 {UI.HOME.SUBTITLE}
             </p>
-        </motion.div>
+        </div>
     );
 }
 
@@ -62,14 +56,12 @@ export default function Home() {
 
     useEffect(() => {
         // Only show splash screen on first visit per session
-        if (typeof window !== 'undefined' && sessionStorage.getItem('splashShown')) {
+        if (sessionStorage.getItem('splashShown')) {
             setShowSplash(false);
         } else {
             const timer = setTimeout(() => {
                 setShowSplash(false);
-                if (typeof window !== 'undefined') {
-                    sessionStorage.setItem('splashShown', 'true');
-                }
+                sessionStorage.setItem('splashShown', 'true');
             }, 2000); // Show for 2 seconds
 
             return () => clearTimeout(timer);
@@ -90,9 +82,7 @@ export default function Home() {
 
   return (
     <>
-      <AnimatePresence>
-        {showSplash && <SplashScreen />}
-      </AnimatePresence>
+      {showSplash && <SplashScreen />}
       
       {!showSplash && (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">

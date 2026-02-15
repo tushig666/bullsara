@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Lottery } from '@/lib/types';
 import { UI } from '@/lib/i18n';
 import { Badge } from './ui/badge';
@@ -18,21 +17,8 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
     const imageUrl = image?.imageUrl || 'https://picsum.photos/seed/placeholder/800/600';
     const imageHint = image?.imageHint || 'car';
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: index * 0.1,
-        duration: 0.5,
-        ease: 'easeOut',
-      },
-    },
-  };
-
   return (
-    <motion.div variants={cardVariants} initial="hidden" animate="visible" whileHover={{ y: -5 }}>
+    <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1.5">
       <Link href={`/lotteries/${lottery.id}`} className="block group">
         <div className="bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-accent/20">
           <div className="overflow-hidden">
@@ -57,6 +43,6 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }
