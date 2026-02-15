@@ -1,0 +1,191 @@
+/**
+ * Core Philosophy:
+ * This ruleset implements a hybrid security model tailored for a lottery application.
+ * It combines strict user-ownership for personal data (orders, tickets), role-based
+ * access control for administrative functions (managing lotteries), and public read
+ * access for shared data (active lotteries).
+ *
+ * Data Structure:
+ * The data is organized to segregate private and public information. User-specific
+ * data like orders and tickets are nested under `/users/{userId}` to leverage path-based
+ * security. Public data like `/lotteries` is at the top level. A dedicated
+ * `/roles_admin` collection serves as an efficient, non-hierarchical lookup table for
+ * identifying administrators.
+ *
+ * Key Security Decisions:
+ * 1. Admin Checks: Administrator privileges are verified using an `exists()` check against
+ *    the `/roles_admin/{userId}` collection. This is significantly more performant
+ *    and secure than reading a 'role' field from a user profile, as it avoids extra
+ *    document reads and isolates authorization logic.
+ * 2. User Data Isolation: All user-owned data is stored in subcollections under their
+ *    unique user ID path (`/users/{userId}/...`), preventing any user from accessing
+ *    or even listing the data of another user.
+ * 3. Denormalization for Authorization: To maintain performant and simple rules,
+ *    authorization-critical data is denormalized. For example, the `userId` of an
+ *    order's owner is copied directly into the corresponding `/payments/{paymentId}`
+ *    document. This allows payment rules to authorize access directly without needing
+ *    to `get()` the related order document.
+ * 4. Write Operations: All write operations (`create`, `update`, `delete`) are
+ *    strictly controlled. There are no open writes; every modification requires
+ *    proof of ownership or administrative privilege.
+ * 5. Listing Prohibition: Listing all users from the `/users` collection is explicitly
+ *    disallowed to protect user privacy and prevent data scraping.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the requesting user's UID matches the provided userId.
+     * This is the foundation of the ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Returns true if the requesting user is a designated administrator.
+     * Checks for the existence of the user's UID in the roles_admin collection.
+     * This is a highly efficient and secure way to manage roles.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Returns true if the document being accessed already exists in Firestore.
+     * CRITICAL for safe update and delete operations.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Combines ownership check with an existence check for update/delete operations.
+     * Ensures a user can only modify or delete documents they own AND that already exist.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * For create operations, validates that the new document's internal 'userId'
+     * field correctly matches the user creating it. Enforces relational integrity.
+     */
+    function isCreatingOwnContent(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    /**
+     * For update operations, validates that the 'userId' field cannot be changed.
+     * Enforces immutability of the ownership link.
+     */
+    function isUserIdImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+
+    /**
+     * @description Rules for user profile documents.
+     * @path /users/{userId}
+     * @allow (get) A user can read their own profile, and admins can read any profile.
+     * @deny (get) A user cannot read another user's profile.
+     * @principle Restricts access to a user's own data tree and allows admin oversight.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false; // Disallow listing all users to protect privacy.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if (isExistingOwner(userId) || isAdmin()) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId) || isAdmin();
+    }
+
+    /**
+     * @description Rules for the admin role lookup collection.
+     * @path /roles_admin/{userId}
+     * @allow (get) No client can directly read documents here; access is via `exists()`.
+     * @deny (write) No client can modify roles, preventing self-promotion.
+     * @principle This collection is a secure, server-side managed lookup table.
+     */
+    match /roles_admin/{userId} {
+      allow get: if false;
+      allow list: if false;
+      allow create: if false; // Must be managed by a trusted server process.
+      allow update: if false; // Must be managed by a trusted server process.
+      allow delete: if false; // Must be managed by a trusted server process.
+    }
+
+    /**
+     * @description Rules for lottery documents.
+     * @path /lotteries/{lotteryId}
+     * @allow (list) Any user, signed in or not, can list all lotteries.
+     * @deny (create) A regular user cannot create a new lottery.
+     * @principle Implements a "Public Read, Admin-Only Write" model for shared data.
+     */
+    match /lotteries/{lotteryId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Rules for a user's order documents.
+     * @path /users/{userId}/orders/{orderId}
+     * @allow (create) A user can create an order for themselves in their own subcollection.
+     * @deny (get) A user cannot read another user's order.
+     * @principle Enforces strict data ownership within a user's private subcollection.
+     */
+    match /users/{userId}/orders/{orderId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isCreatingOwnContent(userId);
+      allow update: if (isExistingOwner(userId) || isAdmin()) && isUserIdImmutable();
+      allow delete: if isExistingOwner(userId) || isAdmin();
+    }
+
+    /**
+     * @description Rules for a user's ticket documents.
+     * @path /users/{userId}/tickets/{ticketId}
+     * @allow (list) A user can list all tickets they own.
+     * @deny (create) A user cannot create a ticket for another user.
+     * @principle Enforces strict data ownership within a user's private subcollection.
+     */
+    match /users/{userId}/tickets/{ticketId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isCreatingOwnContent(userId);
+      allow update: if (isExistingOwner(userId) || isAdmin()) && isUserIdImmutable();
+      allow delete: if isExistingOwner(userId) || isAdmin();
+    }
+
+    /**
+     * @description Rules for payment documents, secured by a denormalized userId.
+     * @path /payments/{paymentId}
+     * @allow (get) A user can fetch a payment document if it contains their userId.
+     * @deny (update) A user cannot update a payment document belonging to someone else.
+     * @principle Utilizes denormalized data (`userId`) for efficient, non-hierarchical authorization.
+     */
+    match /payments/{paymentId} {
+      // NOTE: The 'userId' field MUST be denormalized onto this document from the associated Order for these rules to work.
+      allow get: if (isOwner(resource.data.userId) || isAdmin()) && isExistingDoc();
+      // Allow listing ONLY when the query explicitly filters for the user's own payments.
+      allow list: if (isSignedIn() && request.query.where.userId == request.auth.uid) || isAdmin();
+      allow create: if isOwner(request.resource.data.userId); // Assumes a client (or function) can create a payment record for themselves.
+      allow update: if (isOwner(resource.data.userId) || isAdmin()) && isExistingDoc() && isUserIdImmutable();
+      allow delete: if false; // Payments should generally not be deletable by clients.
+    }
+  }
+}

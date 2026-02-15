@@ -1,0 +1,380 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Bullsara lottery platform, including both regular participants and administrators.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address, used for login.",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the system, either 'user' for participants or 'admin' for administrators."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "role",
+        "createdAt"
+      ]
+    },
+    "Lottery": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Lottery",
+      "type": "object",
+      "description": "Represents a single luxury car lottery event with its specific details and status.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Lottery entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The descriptive title of the lottery."
+        },
+        "carModel": {
+          "type": "string",
+          "description": "The model name of the luxury car being raffled."
+        },
+        "year": {
+          "type": "number",
+          "description": "The manufacturing year of the car."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the car and the lottery terms."
+        },
+        "images": {
+          "type": "array",
+          "description": "An array of URLs pointing to images of the car.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "pricePerTicket": {
+          "type": "number",
+          "description": "The price of a single lottery ticket in MNT."
+        },
+        "totalTickets": {
+          "type": "number",
+          "description": "The total number of tickets available for this lottery."
+        },
+        "remainingTickets": {
+          "type": "number",
+          "description": "The number of tickets still available for purchase."
+        },
+        "nextTicketNumber": {
+          "type": "number",
+          "description": "The next sequential ticket number that will be assigned. This helps prevent overselling and track available numbers."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the lottery (e.g., 'active', 'finished')."
+        },
+        "winnerTicketId": {
+          "type": "string",
+          "description": "Reference to the Ticket entity that won this lottery. (Relationship: Ticket 1:1 Lottery)"
+        },
+        "winnerUserId": {
+          "type": "string",
+          "description": "Reference to the User entity who won this lottery. (Relationship: User 1:1 Lottery)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the lottery was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the lottery details were last updated or its status changed.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "carModel",
+        "year",
+        "description",
+        "images",
+        "pricePerTicket",
+        "totalTickets",
+        "remainingTickets",
+        "nextTicketNumber",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a user's intent to purchase tickets for a specific lottery.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Order entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who placed this order. (Relationship: User 1:N Order)"
+        },
+        "lotteryId": {
+          "type": "string",
+          "description": "Reference to the Lottery for which tickets are being purchased. (Relationship: Lottery 1:N Order)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The number of tickets requested in this order."
+        },
+        "totalPrice": {
+          "type": "number",
+          "description": "The total price for all tickets in this order in MNT."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the order (e.g., 'pending', 'paid', 'failed')."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the order was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the order status was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "lotteryId",
+        "quantity",
+        "totalPrice",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Ticket": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ticket",
+      "type": "object",
+      "description": "Represents an individual lottery ticket purchased by a user for a specific lottery.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Ticket entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who owns this ticket. (Relationship: User 1:N Ticket)"
+        },
+        "lotteryId": {
+          "type": "string",
+          "description": "Reference to the Lottery this ticket belongs to. (Relationship: Lottery 1:N Ticket)"
+        },
+        "ticketNumber": {
+          "type": "number",
+          "description": "The unique number assigned to this ticket within its lottery."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to the Order through which this ticket was purchased. (Relationship: Order 1:N Ticket)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the ticket was generated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "lotteryId",
+        "ticketNumber",
+        "orderId",
+        "createdAt"
+      ]
+    },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Records details of a payment transaction associated with an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Payment entity."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to the Order this payment is for. (Relationship: Order 1:1 Payment)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount paid for the order in MNT."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the payment (e.g., 'initiated', 'completed', 'failed')."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "The method used for payment (e.g., 'QPay')."
+        },
+        "transactionId": {
+          "type": "string",
+          "description": "An optional external transaction ID provided by the payment gateway."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the payment record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the payment status was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "amount",
+        "status",
+        "paymentMethod",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles including email and role. The `userId` is the document ID. Primarily used to store user-specific metadata. The `role` field can be present, but for robust admin checks, the `/roles_admin` collection is preferred. This collection is path-owned by the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user, matching `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "A dedicated collection storing the UIDs of users who have an administrative role. This allows for efficient, authorization-independent 'existence over content' checks in security rules to determine if a user is an admin. Documents here are typically empty or contain a simple flag (e.g., `isAdmin: true`).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who is an administrator."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/lotteries/{lotteryId}",
+        "definition": {
+          "entityName": "Lottery",
+          "schema": {
+            "$ref": "#/backend/entities/Lottery"
+          },
+          "description": "Contains details for all lottery events. Documents are publicly readable (especially when 'active'), and write access is restricted to administrators. The 'status' field allows clear state modeling. No denormalized authorization fields are needed as access is global public read or global admin write.",
+          "params": [
+            {
+              "name": "lotteryId",
+              "description": "The unique ID of the lottery event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores orders placed by specific users. Access is restricted to the owning user (`userId`) or administrators. The `userId` is present in both the path and the document itself, facilitating simple and independent authorization rules. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who placed the order, matching `request.auth.uid`."
+            },
+            {
+              "name": "orderId",
+              "description": "The unique ID of the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/tickets/{ticketId}",
+        "definition": {
+          "entityName": "Ticket",
+          "schema": {
+            "$ref": "#/backend/entities/Ticket"
+          },
+          "description": "Stores individual lottery tickets owned by specific users. Access is restricted to the owning user (`userId`) or administrators. The `userId` is present in both the path and the document, enabling direct and independent authorization checks. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user who owns the ticket, matching `request.auth.uid`."
+            },
+            {
+              "name": "ticketId",
+              "description": "The unique ID of the ticket."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Records details of payment transactions. Although not a subcollection, this collection's access depends on the owning user of the associated order. Therefore, the 'userId' (from the related Order) MUST be denormalized into each Payment document to ensure Authorization Independence. Read access is for the owning user (where `userId` matches `request.auth.uid`) or administrators, with writes typically from Cloud Functions. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "paymentId",
+              "description": "The unique ID of the payment transaction."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed following the core principles of Authorization Independence, Structural Segregation, and Access Modeling to ensure security, scalability, and debuggability. \n\n**Authorization Independence (CRITICAL) and Denormalization Strategy:**\nTo eliminate `get()` calls in security rules and enable atomic operations, authorization context is denormalized:\n1.  **User-owned data (`orders`, `tickets`):** These collections are organized as subcollections under `/users/{userId}` (e.g., `/users/{userId}/orders/{orderId}`). This path-based ownership naturally includes the `userId` in the document's path. Additionally, the `userId` field is explicitly present within the `Order` and `Ticket` documents. This redundancy is intentional, allowing security rules to directly compare `request.auth.uid` with both the path wildcard `{userId}` and the `resource.data.userId` without needing to fetch a parent document.\n2.  **Payment Data (`payments`):** The `Payment` entity is conceptually tied to an `Order`, which in turn is owned by a `User`. To avoid `get()` calls to the `Order` document from the `Payment` document for authorization, the `userId` (owner of the order) MUST be denormalized and stored directly within each `payment` document. This allows payment-related rules to check `request.auth.uid == resource.data.userId` directly.\n3.  **Admin Roles (`roles_admin`):** Instead of relying on a `role` field within the `User` document (which would require a `get()` call to the user's profile for every privileged action), a separate top-level collection `/roles_admin/{userId}` is used. An admin's UID exists as a document in this collection. Security rules can then use `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))` for an atomic, non-hierarchical check, ensuring admin actions are authorization-independent.\n\n**Support for QAPs (Rules are not Filters):**\n1.  **Public Data (`lotteries`):** The `/lotteries` collection is designed for public read access. Security rules will allow `list` operations without filtering, as all documents within this collection are intended to be visible to all users (with admin-only write capabilities). The `status` field (`active`, `finished`) is within each `Lottery` document, enabling client-side filtering or server-side queries if needed, but not requiring rule-based filtering to secure the list.\n2.  **User-Specific Data (`orders`, `tickets`, `payments`):**\n    *   For `orders` and `tickets`, the hierarchical path `/users/{userId}/...` provides inherent QAP support. Users can only list documents in their specific `/users/{request.auth.uid}/orders` or `/users/{request.auth.uid}/tickets` subcollections, ensuring that `list` operations are always within their authorized scope.\n    *   For `payments`, the denormalized `userId` field allows secure `list` operations using a query constraint (e.g., `db.collection('payments').where('userId', '==', auth.uid)`), which Firebase rules can validate (e.g., `allow list: if request.auth.uid != null && request.auth.uid == request.query.where.userId`). This ensures users only retrieve their own payment records.\n\n**Structural Segregation and Access Modeling:**\n*   **`/users/{userId}`:** User profiles, primarily for authentication and storing a basic `role` field, although the `roles_admin` collection is the primary source of truth for admin status for rule efficiency.\n*   **`/roles_admin/{userId}`:** Dedicated collection for admin UIDs, enabling simple `exists()` checks for admin privileges. This clearly segregates admin authorization.\n*   **`/lotteries/{lotteryId}`:** All lottery documents reside here. They have a homogeneous security posture: public read for `status: 'active'`, admin write access.\n*   **`/users/{userId}/orders/{orderId}`:** User-specific orders. Only the owner (or admin) can read/write. This path clearly segregates user-owned order data.\n*   **`/users/{userId}/tickets/{ticketId}`:** User-specific tickets. Only the owner (or admin) can read. This path clearly segregates user-owned ticket data.\n*   **`/payments/{paymentId}`:** Top-level collection for payments, but with `userId` denormalized for direct authorization checks by the owning user or admin. This segregates payment data but allows flexible querying."
+  }
+}
