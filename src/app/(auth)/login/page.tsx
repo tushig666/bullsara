@@ -12,13 +12,24 @@ import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, type UserCredential } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'И-мэйл хаягаа зөв оруулна уу.' }),
   password: z.string().min(6, { message: 'Нууц үг 6-аас доошгүй тэмдэгттэй байх ёстой.' }),
 });
+
+const syncSession = async (userCredential: UserCredential) => {
+    const idToken = await userCredential.user.getIdToken();
+    await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+    });
+};
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -36,14 +47,15 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      // The AuthListener will handle creating the session cookie.
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await syncSession(userCredential);
+      
       toast({
         title: UI.GENERAL.SUCCESS,
         description: UI.AUTH.LOGIN_SUCCESS,
       });
       router.push('/');
-      router.refresh(); // To update header by re-fetching server components
+      router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',

@@ -12,7 +12,7 @@ import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, type UserCredential } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/client';
 
@@ -20,6 +20,17 @@ const formSchema = z.object({
   email: z.string().email({ message: 'И-мэйл хаягаа зөв оруулна уу.' }),
   password: z.string().min(6, { message: 'Нууц үг 6-аас доошгүй тэмдэгттэй байх ёстой.' }),
 });
+
+const syncSession = async (userCredential: UserCredential) => {
+    const idToken = await userCredential.user.getIdToken();
+    await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+    });
+};
 
 export default function SignupPage() {
   const { toast } = useToast();
@@ -42,18 +53,21 @@ export default function SignupPage() {
       
       // Create the user profile in Firestore
       await setDoc(doc(db, 'users', user.uid), {
+        id: user.uid,
         email: user.email,
         role: 'user',
         createdAt: serverTimestamp(),
       });
       
-      // The AuthListener will handle cookie creation. The user will be signed in client-side.
-      // We can then redirect to login, or directly to the main page. The prompt directs to login.
+      // Set session cookie to log the user in server-side
+      await syncSession(userCredential);
+      
       toast({
         title: UI.GENERAL.SUCCESS,
-        description: UI.AUTH.SIGNUP_SUCCESS,
+        description: "Амжилттай бүртгүүлж, нэвтэрлээ.",
       });
-      router.push('/login');
+      router.push('/');
+      router.refresh();
     } catch (error: any) {
       toast({
         variant: 'destructive',
