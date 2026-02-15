@@ -18,7 +18,7 @@ function SplashScreen() {
             transition={{ duration: 0.5 }}
             className="fixed inset-0 bg-background z-[100] flex flex-col items-center justify-center text-center p-4"
         >
-            <Logo className="w-48 mb-4" />
+            <Logo className="text-6xl mb-4" />
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
                 {UI.HOME.SUBTITLE}
             </p>

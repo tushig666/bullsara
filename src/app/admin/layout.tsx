@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <Logo className="w-36" />
+          <Logo />
         </SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
