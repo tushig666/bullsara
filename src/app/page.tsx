@@ -1,9 +1,11 @@
+'use client';
+
 import { LotteryCard } from '@/components/lottery-card';
-import { getLotteries } from '@/app/actions';
 import { UI } from '@/lib/i18n';
 import type { Lottery } from '@/lib/types';
-import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 function LotteryGridSkeleton() {
     return (
@@ -21,10 +23,26 @@ function LotteryGridSkeleton() {
     );
 }
 
-async function ActiveLotteries() {
-  const lotteries = await getLotteries('active');
+function ActiveLotteries() {
+  const firestore = useFirestore();
+
+  const lotteriesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'lotteries'), where('status', '==', 'active'));
+  }, [firestore]);
+
+  const { data: lotteries, isLoading, error } = useCollection<Lottery>(lotteriesQuery);
+
+  if (isLoading) {
+    return <LotteryGridSkeleton />;
+  }
+
+  if (error) {
+    console.error("Error fetching lotteries:", error);
+    return <p className="text-center text-destructive">Сугалааг ачааллахад алдаа гарлаа.</p>;
+  }
   
-  if (lotteries.length === 0) {
+  if (!lotteries || lotteries.length === 0) {
     return <p className="text-center text-muted-foreground">Одоогоор идэвхтэй сугалаа байхгүй байна.</p>;
   }
 
@@ -45,9 +63,7 @@ export default function Home() {
                 {UI.HOME.TITLE}
             </h1>
         </div>
-        <Suspense fallback={<LotteryGridSkeleton />}>
-            <ActiveLotteries />
-        </Suspense>
+        <ActiveLotteries />
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { getLottery } from "@/app/actions";
-import { notFound } from "next/navigation";
+'use client';
+import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,11 +7,61 @@ import { UI } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { TicketPanel } from "./ticket-panel";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { getCurrentUser } from "@/lib/auth";
+import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
+import { Lottery } from "@/lib/types";
+import { doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
-export default async function LotteryDetailPage({ params }: { params: { id: string } }) {
-  const lottery = await getLottery(params.id);
-  const user = await getCurrentUser();
+function LotteryDetailSkeleton() {
+  return (
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="grid lg:grid-cols-2 gap-12 items-start">
+        <div>
+          <Skeleton className="w-full aspect-[4/3] rounded-lg" />
+        </div>
+        <div className="space-y-8">
+          <div>
+            <Skeleton className="h-12 w-3/4 mb-3" />
+            <div className="flex items-center gap-4 mb-6">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+          </div>
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+export default function LotteryDetailPage() {
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const firestore = useFirestore();
+  const { user } = useUser(); // useUser provides user state
+
+  const lotteryDocRef = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'lotteries', id);
+  }, [firestore, id]);
+
+  const { data: lottery, isLoading, error } = useDoc<Lottery>(lotteryDocRef);
+
+  if (isLoading) {
+    return <LotteryDetailSkeleton />;
+  }
+
+  if (error) {
+    console.error("Error fetching lottery:", error);
+    // Maybe redirect or show a proper error page
+    notFound();
+  }
 
   if (!lottery) {
     notFound();
@@ -25,7 +75,7 @@ export default async function LotteryDetailPage({ params }: { params: { id: stri
         <div>
           <Carousel className="w-full">
             <CarouselContent>
-              {images.map((image, index) => (
+              {images.length > 0 ? images.map((image, index) => (
                 <CarouselItem key={index}>
                   <Card className="overflow-hidden">
                     <CardContent className="p-0">
@@ -41,7 +91,23 @@ export default async function LotteryDetailPage({ params }: { params: { id: stri
                     </CardContent>
                   </Card>
                 </CarouselItem>
-              ))}
+              )) : (
+                 <CarouselItem>
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <Image
+                        src="https://picsum.photos/seed/placeholder/800/600"
+                        alt={`${lottery.title} - placeholder`}
+                        width={800}
+                        height={600}
+                        data-ai-hint="car"
+                        className="w-full h-auto object-cover aspect-[4/3]"
+                        priority={true}
+                      />
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              )}
             </CarouselContent>
             <CarouselPrevious className="left-4" />
             <CarouselNext className="right-4" />

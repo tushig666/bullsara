@@ -241,6 +241,8 @@ export async function drawWinner(lotteryId: string) {
             status: 'finished',
             winnerTicketId: winningTicket.id,
             winnerUserId: winningTicket.userId,
+            winnerTicket: winningTicket.ticketNumber, // Denormalize ticket number
+            winnerUser: winner ? winner.email : null, // Denormalize user email
         });
 
         revalidatePath(`/admin/lotteries`);
