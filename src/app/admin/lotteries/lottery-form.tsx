@@ -12,8 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Lottery } from '@/lib/types';
-import { createLottery, updateLottery } from '@/app/actions';
 import { Loader2 } from 'lucide-react';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 
 const formSchema = z.object({
   title: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
@@ -34,6 +35,7 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,24 +51,45 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!firestore) return;
     setIsSubmitting(true);
-    const result = isEditMode
-      ? await updateLottery(lottery.id, values)
-      : await createLottery(values);
 
-    if (result.success) {
-      toast({
-        title: UI.GENERAL.SUCCESS,
-        description: `Сугалаа амжилттай ${isEditMode ? 'шинэчлэгдлээ' : 'үүслээ'}.`,
-      });
-      router.push('/admin/lotteries');
-    } else {
-      toast({
-        variant: 'destructive',
-        title: UI.GENERAL.ERROR,
-        description: result.error,
-      });
-      setIsSubmitting(false);
+    try {
+        if (isEditMode && lottery) {
+            const lotteryRef = doc(firestore, 'lotteries', lottery.id);
+            await setDoc(lotteryRef, {
+                ...values,
+                images: values.images.split(',').map(s => s.trim()),
+                updatedAt: serverTimestamp(),
+            }, { merge: true });
+        } else {
+            const lotteriesCollection = collection(firestore, 'lotteries');
+            await addDoc(lotteriesCollection, {
+                ...values,
+                images: values.images.split(',').map(s => s.trim()),
+                remainingTickets: values.totalTickets,
+                nextTicketNumber: 1,
+                status: 'active',
+                winnerTicketId: null,
+                winnerUserId: null,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            });
+        }
+
+        toast({
+            title: UI.GENERAL.SUCCESS,
+            description: `Сугалаа амжилттай ${isEditMode ? 'шинэчлэгдлээ' : 'үүслээ'}.`,
+        });
+        router.push('/admin/lotteries');
+        router.refresh(); // To ensure the list page is up-to-date
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: UI.GENERAL.ERROR,
+            description: error.message || 'An unknown error occurred.',
+        });
+        setIsSubmitting(false);
     }
   }
 

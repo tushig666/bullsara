@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { deleteLottery, drawWinner } from '@/app/actions';
-import { Lottery } from '@/lib/types';
+import { Lottery, Ticket } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { UI } from '@/lib/i18n';
 import Link from 'next/link';
@@ -20,35 +19,65 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Loader2 } from 'lucide-react';
+import { useFirestore } from '@/firebase';
+import { doc, deleteDoc, writeBatch, collection, getDocs, updateDoc, query, where } from 'firebase/firestore';
 
 export function AdminLotteryActions({ lottery }: { lottery: Lottery }) {
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
 
   const handleDelete = async () => {
+    if (!firestore) return;
     setIsDeleting(true);
-    const result = await deleteLottery(lottery.id);
-    if (result.success) {
+    try {
+      await deleteDoc(doc(firestore, 'lotteries', lottery.id));
       toast({ title: UI.GENERAL.SUCCESS, description: 'Сугалаа устгагдлаа.' });
       router.refresh();
-    } else {
-      toast({ variant: 'destructive', title: UI.GENERAL.ERROR, description: result.error });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: UI.GENERAL.ERROR, description: error.message });
+      setIsDeleting(false);
     }
-    setIsDeleting(false);
   };
   
   const handleDrawWinner = async () => {
+    if(!firestore) return;
     setIsDrawing(true);
-    const result = await drawWinner(lottery.id);
-    if (result.success) {
-      toast({ title: UI.GENERAL.SUCCESS, description: `Ялагч тодорлоо! Азын дугаар: ${result.winnerTicket}` });
+    
+    try {
+        const ticketsCollectionRef = collection(firestore, "tickets");
+        const q = query(ticketsCollectionRef, where("lotteryId", "==", lottery.id));
+
+        const ticketsSnapshot = await getDocs(q);
+        const tickets = ticketsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
+
+        if (tickets.length === 0) {
+            throw new Error("Энэ сугалаанд зарагдсан тасалбар байхгүй байна.");
+        }
+        
+        const winningTicketIndex = Math.floor(Math.random() * tickets.length);
+        const winningTicket = tickets[winningTicketIndex];
+
+        const userDocRef = doc(firestore, 'users', winningTicket.userId);
+        // In a real app you would fetch user data, but for now we just need the id.
+        
+        const lotteryRef = doc(firestore, "lotteries", lottery.id);
+        await updateDoc(lotteryRef, {
+            status: 'finished',
+            winnerTicketId: winningTicket.id,
+            winnerUserId: winningTicket.userId,
+            winnerTicket: winningTicket.ticketNumber,
+        });
+
+      toast({ title: UI.GENERAL.SUCCESS, description: `Ялагч тодорлоо! Азын дугаар: ${winningTicket.ticketNumber}` });
       router.refresh();
-    } else {
-      toast({ variant: 'destructive', title: UI.GENERAL.ERROR, description: result.error });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: UI.GENERAL.ERROR, description: error.message });
+    } finally {
+        setIsDrawing(false);
     }
-    setIsDrawing(false);
   };
 
 
@@ -64,11 +93,11 @@ export function AdminLotteryActions({ lottery }: { lottery: Lottery }) {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{UI.ADMIN.DRAW_WINNER}?</AlertDialogTitle>
-              <AlertDialogDescription>{UI.ADMIN.CONFIRM_DELETE}</AlertDialogDescription>
+              <AlertDialogDescription>Энэ үйлдэл нь санамсаргүйгээр ялагчийг сонгоно. Та итгэлтэй байна уу?</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{UI.GENERAL.CANCEL}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDrawWinner} >{UI.ADMIN.DRAW}</AlertDialogAction>
+              <AlertDialogAction onClick={handleDrawWinner}>{UI.ADMIN.DRAW}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

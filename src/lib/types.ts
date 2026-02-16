@@ -1,8 +1,7 @@
 import type { Timestamp as ClientTimestamp } from 'firebase/firestore';
-import type { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 
 // This allows us to use the type in both client and server components
-export type Timestamp = ClientTimestamp | AdminTimestamp;
+export type Timestamp = ClientTimestamp;
 
 export type UserRole = 'user' | 'admin';
 
@@ -25,12 +24,14 @@ export interface Lottery {
   pricePerTicket: number;
   totalTickets: number;
   remainingTickets: number;
+  nextTicketNumber: number;
   status: LotteryStatus;
   winnerTicket?: number | null;
   winnerUser?: string | null;
   winnerTicketId?: string | null;
   winnerUserId?: string | null;
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export type OrderStatus = 'pending' | 'paid';
@@ -43,6 +44,7 @@ export interface Order {
   totalPrice: number;
   status: OrderStatus;
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface Ticket {
