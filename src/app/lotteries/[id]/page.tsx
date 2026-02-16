@@ -79,18 +79,13 @@ export default function LotteryDetailPage() {
   const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
 
   // We are loading if the doc is loading, or if we don't have a valid ref yet 
-  // because id or firestore is missing. This prevents a flash of 404 page.
-  const isLoading = isDocLoading || !lotteryDocRef;
-
-  // 1. Handle loading state
-  if (isLoading) {
+  // because id or firestore is missing. This prevents any premature rendering.
+  if (isDocLoading || !lotteryDocRef) {
     return <LotteryDetailSkeleton />;
   }
 
-  // 2. Handle errors
+  // After loading, we can check for errors.
   if (error) {
-    // This will show a more specific error to the user instead of a generic 404
-    // if the issue is related to permissions or other Firestore errors.
     console.error("Error fetching lottery details:", error);
     return (
         <div className="container flex items-center justify-center min-h-[50vh]">
@@ -108,7 +103,8 @@ export default function LotteryDetailPage() {
     );
   }
 
-  // 3. After loading and with no error, if data is null, then it's a 404.
+  // If loading is finished and there's no error, but the data is null,
+  // it means the document was not found. This is a definitive 404.
   if (!lottery) {
     notFound();
   }

@@ -37,17 +37,14 @@ export default function EditLotteryPage() {
     }, [firestore, id]);
 
     const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
-
-    // We are loading if the doc is loading, or if we don't have a valid ref yet 
-    // because id or firestore is missing. This prevents a flash of 404 page.
-    const isLoading = isDocLoading || !lotteryDocRef;
-
-    // 1. First, handle loading state
-    if (isLoading) {
+    
+    // We are loading if the doc is loading, or if we don't have a valid ref yet
+    // because id or firestore is missing. This prevents any premature rendering.
+    if (isDocLoading || !lotteryDocRef) {
         return <EditLotteryPageSkeleton />;
     }
 
-    // 2. Second, handle errors
+    // After loading, we can check for errors.
     if (error) {
         console.error("Error fetching lottery:", error);
         return (
@@ -66,13 +63,13 @@ export default function EditLotteryPage() {
         );
     }
     
-    // 3. After loading (isDocLoading is false AND lotteryDocRef is not null) and no errors, 
-    // if data is still null, it's a 404.
+    // If loading is finished and there's no error, but the data is null,
+    // it means the document was not found. This is a definitive 404.
     if (!lottery) {
         notFound();
     }
 
-    // 4. If all checks pass, render the form with the data.
+    // If all checks pass, render the form with the data.
     return (
         <div>
             <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.EDIT_LOTTERY}</h1>
