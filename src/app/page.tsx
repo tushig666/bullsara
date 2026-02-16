@@ -50,14 +50,6 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-        <div className="text-center mb-16">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-primary-foreground mb-4 font-headline">
-            {UI.HOME.TITLE}
-            </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-            {UI.HOME.SUBTITLE}
-            </p>
-        </div>
         {isLoading ? <LotteryGridSkeleton /> : <LotteryGrid lotteries={lotteries} />}
     </div>
   );
