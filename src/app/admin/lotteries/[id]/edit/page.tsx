@@ -7,6 +7,7 @@ import { notFound, useParams } from "next/navigation";
 import { LotteryForm } from "../../lottery-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 
 function EditLotteryPageSkeleton() {
   return (
@@ -31,20 +32,31 @@ export default function EditLotteryPage() {
     const id = Array.isArray(params.id) ? params.id[0] : params.id;
     const firestore = useFirestore();
 
+    const [isReady, setIsReady] = useState(false);
+    useEffect(() => {
+        // This effect ensures we only proceed when `id` and `firestore` are available.
+        if (id && firestore) {
+            setIsReady(true);
+        }
+    }, [id, firestore]);
+
     const lotteryDocRef = useMemoFirebase(() => {
-        if (!firestore || !id) return null;
+        // The memoization now correctly waits for the readiness signal.
+        if (!isReady) return null;
         return doc(firestore, 'lotteries', id);
-    }, [firestore, id]);
+    }, [isReady, firestore, id]);
 
     const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
     
-    // We are loading if the doc is loading, or if we don't have a valid ref yet
-    // because id or firestore is missing. This prevents any premature rendering.
-    if (isDocLoading || !lotteryDocRef) {
+    // The main loading condition:
+    // We are loading if we are not "ready" (missing id/firestore) or if the document is actively being fetched.
+    const isLoading = !isReady || isDocLoading;
+
+    if (isLoading) {
         return <EditLotteryPageSkeleton />;
     }
 
-    // After loading, we can check for errors.
+    // After loading is completely finished, we can check for errors.
     if (error) {
         console.error("Error fetching lottery:", error);
         return (
@@ -64,7 +76,7 @@ export default function EditLotteryPage() {
     }
     
     // If loading is finished and there's no error, but the data is null,
-    // it means the document was not found. This is a definitive 404.
+    // it means the document was not found for the given ID. This is a definitive 404.
     if (!lottery) {
         notFound();
     }

@@ -12,6 +12,7 @@ import { Lottery } from "@/lib/types";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
 
 function LotteryDetailSkeleton() {
   return (
@@ -71,16 +72,25 @@ export default function LotteryDetailPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => {
+    // This effect ensures we only proceed when `id` and `firestore` are available.
+    if (id && firestore) {
+        setIsReady(true);
+    }
+  }, [id, firestore]);
+
+
   const lotteryDocRef = useMemoFirebase(() => {
-    if (!firestore || !id) return null;
+    if (!isReady) return null;
     return doc(firestore, 'lotteries', id);
-  }, [firestore, id]);
+  }, [isReady, firestore, id]);
 
   const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
 
-  // We are loading if the doc is loading, or if we don't have a valid ref yet 
-  // because id or firestore is missing. This prevents any premature rendering.
-  if (isDocLoading || !lotteryDocRef) {
+  const isLoading = !isReady || isDocLoading;
+
+  if (isLoading) {
     return <LotteryDetailSkeleton />;
   }
 
