@@ -5,7 +5,7 @@ import Image from 'next/image';
 export function Logo({ className }: { className?: string }) {
   return (
     <Link href="/" className={cn('relative block h-10 w-[150px]', className)}>
-      <Image src="/logo.png" alt="Bullsara Logo" fill priority sizes="150px" />
+      <Image src="https://files.catbox.moe/0v5no8.png" alt="Bullsara Logo" fill priority sizes="150px" />
     </Link>
   );
 }
