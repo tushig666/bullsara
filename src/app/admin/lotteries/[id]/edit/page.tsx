@@ -35,7 +35,9 @@ export default function EditLotteryPage() {
         return doc(firestore, 'lotteries', id);
     }, [firestore, id]);
 
-    const { data: lottery, isLoading } = useDoc<Lottery>(lotteryDocRef);
+    const { data: lottery, isLoading: isDocLoading } = useDoc<Lottery>(lotteryDocRef);
+
+    const isLoading = isDocLoading || !id;
 
     if (isLoading) {
         return <EditLotteryPageSkeleton />;
