@@ -55,6 +55,18 @@
       "imageHint": "G-Wagon interior"
     },
     {
+      "id": "mercedes-c-class-1",
+      "description": "Front view of a silver Mercedes-Benz C-Class",
+      "imageUrl": "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtZXJjZWRlcyUyMGJlbnp8ZW58MHx8fHwxNzcxMjMzNzQyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Mercedes Benz"
+    },
+    {
+      "id": "mercedes-c-class-2",
+      "description": "Interior of a Mercedes-Benz C-Class",
+      "imageUrl": "https://images.unsplash.com/photo-1616789916613-5a233621c88d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxtZXJjZWRlcyUyMGJlenolMjBpbnRlcmlvcnxlbnwwfHx8fDE3NzEyMzM4MDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "Mercedes interior"
+    },
+    {
       "id": "qpay-qr",
       "description": "Placeholder for a QPay QR code",
       "imageUrl": "https://images.unsplash.com/photo-1662383729882-e03ce8e00887?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxRUiUyMGNvZGV8ZW58MHx8fHwxNzcxMDUxMDQxfDA&ixlib=rb-4.1.0&q=80&w=1080",
