@@ -13,7 +13,22 @@ interface LotteryCardProps {
 }
 
 export function LotteryCard({ lottery, index }: LotteryCardProps) {
-    const image = PlaceHolderImages.find(img => img.id === lottery.images[0]);
+    let image;
+    // If the lottery has a specific image ID, use it.
+    if (lottery.images && lottery.images.length > 0) {
+        image = PlaceHolderImages.find(img => img.id === lottery.images[0]);
+    }
+
+    // If no specific image, try to find one based on car model hint
+    if (!image) {
+        const lowerCaseCarModel = lottery.carModel.toLowerCase();
+        // Find an image where the hint is included in the car model name, but exclude interior shots.
+        image = PlaceHolderImages.find(img => 
+            lowerCaseCarModel.includes(img.imageHint.toLowerCase()) && 
+            !img.imageHint.toLowerCase().includes('interior')
+        );
+    }
+    
     const imageUrl = image?.imageUrl || 'https://picsum.photos/seed/placeholder/800/450';
     const imageHint = image?.imageHint || 'car';
 

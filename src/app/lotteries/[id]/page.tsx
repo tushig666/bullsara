@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { UI } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { TicketPanel } from "./ticket-panel";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { PlaceHolderImages, ImagePlaceholder } from "@/lib/placeholder-images";
 import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { Lottery } from "@/lib/types";
 import { doc } from "firebase/firestore";
@@ -88,7 +88,20 @@ export default function LotteryDetailPage() {
     notFound();
   }
   
-  const images = lottery.images.map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean);
+  let finalImages: ImagePlaceholder[] = [];
+
+  if (lottery.images && lottery.images.length > 0 && lottery.images[0] !== '') {
+    finalImages = lottery.images
+      .map(id => PlaceHolderImages.find(img => img.id === id))
+      .filter((img): img is ImagePlaceholder => !!img);
+  }
+  
+  if (finalImages.length === 0) {
+    const lowerCaseCarModel = lottery.carModel.toLowerCase();
+    finalImages = PlaceHolderImages.filter(img => 
+        lowerCaseCarModel.includes(img.imageHint.toLowerCase())
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -96,16 +109,16 @@ export default function LotteryDetailPage() {
         <div>
           <Carousel className="w-full">
             <CarouselContent>
-              {images.length > 0 ? images.map((image, index) => (
-                <CarouselItem key={index}>
+              {finalImages.length > 0 ? finalImages.map((image, index) => (
+                <CarouselItem key={image.id + index}>
                   <Card className="overflow-hidden rounded-xl">
                     <CardContent className="p-0">
                       <Image
-                        src={image!.imageUrl}
+                        src={image.imageUrl}
                         alt={`${lottery.title} - view ${index + 1}`}
                         width={800}
                         height={600}
-                        data-ai-hint={image!.imageHint}
+                        data-ai-hint={image.imageHint}
                         className="w-full h-auto object-cover aspect-[4/3]"
                         priority={index === 0}
                       />
