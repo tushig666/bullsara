@@ -14,7 +14,7 @@ interface LotteryCardProps {
 
 export function LotteryCard({ lottery, index }: LotteryCardProps) {
     const image = PlaceHolderImages.find(img => img.id === lottery.images[0]);
-    const imageUrl = image?.imageUrl || 'https://picsum.photos/seed/placeholder/800/600';
+    const imageUrl = image?.imageUrl || 'https://picsum.photos/seed/placeholder/800/800';
     const imageHint = image?.imageHint || 'car';
 
   return (
@@ -26,9 +26,9 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
               src={imageUrl}
               alt={lottery.title}
               width={800}
-              height={600}
+              height={800}
               data-ai-hint={imageHint}
-              className="w-full h-auto object-cover aspect-[4/3] transition-transform duration-500 ease-in-out group-hover:scale-105"
+              className="w-full h-auto object-cover aspect-square transition-transform duration-500 ease-in-out group-hover:scale-105"
             />
           </div>
           <div className="p-6">
