@@ -51,7 +51,7 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         <div className="text-center mb-16">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-primary-foreground mb-4 font-headline">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground mb-4 font-headline">
                 {UI.HOME.TITLE}
             </h1>
         </div>
