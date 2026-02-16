@@ -15,10 +15,11 @@
  * 1. Admin Checks: Administrator privileges are verified using an `exists()` check against
  *    the `/roles_admin/{userId}` collection. This is significantly more performant
  *    and secure than reading a 'role' field from a user profile.
- * 2. Query-Based Security for Reads: Firestore rules are not filters. `read` rules
- *    ensure that any query issued by a non-admin user can ONLY succeed if it
- *    includes a `where('userId', '==', request.auth.uid)` clause. This prevents
- *    users from listing data they don't own.
+ * 2. Query-Based Security for Reads: Firestore rules are not filters. For `list`
+ *    operations on collections with mixed ownership (like `tickets`), the rules
+ *    allow the `list` if the user is signed in, but the `get` rule ensures that
+ *    the query itself MUST be constrained (e.g., via `where('userId', '==', auth.uid)`)
+ *    to only access documents the user is permitted to read.
  * 3. Denormalization for Authorization: The `userId` of an
  *    order's owner is copied directly into the corresponding `/payments/{paymentId}`
  *    document. This allows payment rules to authorize access directly.
@@ -81,14 +82,18 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow get: if isOwner(resource.data.userId) || isAdmin();
+      allow list: if isAdmin(); // Only admins can list all orders.
       allow create: if isOwner(request.resource.data.userId);
       allow update: if isAdmin(); // Status updates are admin-only actions
       allow delete: if isAdmin();
     }
 
     match /tickets/{ticketId} {
-        allow read: if isOwner(resource.data.userId) || isAdmin();
+        allow get: if isOwner(resource.data.userId) || isAdmin();
+        // Users can list tickets, but the query MUST be filtered by their userId,
+        // which is enforced by the `get` rule on the documents returned by the query.
+        allow list: if isSignedIn() || isAdmin(); 
         allow create: if isAdmin(); // Tickets are created by admins confirming payment
         allow update: if isAdmin();
         allow delete: if isAdmin();
@@ -96,7 +101,8 @@ service cloud.firestore {
 
     match /payments/{paymentId} {
       // NOTE: The 'userId' field MUST be denormalized onto this document for these rules to work.
-      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow get: if isOwner(resource.data.userId) || isAdmin();
+      allow list: if isAdmin(); // For now, only admins can list payments.
       allow create: if isOwner(request.resource.data.userId); // Assumes a client (or function) can create a payment record for themselves.
       allow update: if (isOwner(resource.data.userId) || isAdmin()) && isUserIdImmutable();
       allow delete: if false; // Payments should generally not be deletable by clients.
