@@ -78,9 +78,16 @@ export default function LotteryDetailPage() {
 
   const { data: lottery, isLoading, error } = useDoc<Lottery>(lotteryDocRef);
 
+  // 1. Handle loading state
+  if (isLoading) {
+    return <LotteryDetailSkeleton />;
+  }
+
+  // 2. Handle errors
   if (error) {
     // This will show a more specific error to the user instead of a generic 404
     // if the issue is related to permissions or other Firestore errors.
+    console.error("Error fetching lottery details:", error);
     return (
         <div className="container flex items-center justify-center min-h-[50vh]">
             <Card className="w-full max-w-md">
@@ -97,12 +104,7 @@ export default function LotteryDetailPage() {
     );
   }
 
-  // If we don't have an ID from the URL yet, or if the document is still loading, show the skeleton.
-  if (!id || isLoading) {
-    return <LotteryDetailSkeleton />;
-  }
-
-  // After loading, if there's still no lottery data, it's a genuine 404.
+  // 3. After loading and with no error, if data is null, then it's a 404.
   if (!lottery) {
     notFound();
   }
@@ -118,7 +120,7 @@ export default function LotteryDetailPage() {
   if (finalImages.length === 0) {
     const lowerCaseCarModel = lottery.carModel.toLowerCase();
     finalImages = PlaceHolderImages.filter(img => 
-        lowerCaseCarModel.includes(img.imageHint.toLowerCase())
+        img.imageHint.toLowerCase().includes(lowerCaseCarModel)
     );
   }
 
