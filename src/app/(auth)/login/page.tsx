@@ -20,6 +20,19 @@ const formSchema = z.object({
   password: z.string().min(6, { message: 'Нууц үг 6-аас доошгүй тэмдэгттэй байх ёстой.' }),
 });
 
+async function setSessionCookie(idToken: string) {
+  const response = await fetch('/api/auth', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ idToken }),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to set session cookie');
+  }
+}
+
 export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -46,18 +59,18 @@ export default function LoginPage() {
         return;
     }
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      // The AuthListener will handle syncing the session and refreshing the page.
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const idToken = await userCredential.user.getIdToken();
+      
+      await setSessionCookie(idToken);
       
       toast({
         title: UI.GENERAL.SUCCESS,
         description: UI.AUTH.LOGIN_SUCCESS,
       });
 
-      // We just need to wait for the AuthListener to do its job.
-      // A small delay can help ensure the session is set before we navigate,
-      // but router.refresh() in the listener is more reliable.
-      router.replace('/');
+      router.push('/');
+      router.refresh();
 
     } catch (error) {
       toast({
