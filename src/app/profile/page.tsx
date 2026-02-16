@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { redirect } from "next/navigation";
-import { collection, query, getDoc, doc, orderBy, setDoc } from "firebase/firestore";
+import { collection, query, getDoc, doc, orderBy, setDoc, writeBatch } from "firebase/firestore";
 import { Lottery, Ticket, UserProfile } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,14 +33,26 @@ function AdminPromotion() {
   const handlePromote = async () => {
     if (!firestore || !user) return;
     setIsPromoting(true);
+    
+    // Create a batch write to update both documents atomically.
+    const batch = writeBatch(firestore);
+
+    // 1. Update the user's role in the /users/{userId} document
     const userRef = doc(firestore, 'users', user.uid);
+    // Note: We include the 'id' field here to satisfy the security rule that prevents the id from being changed.
+    batch.set(userRef, { id: user.uid, role: 'admin' }, { merge: true });
+
+    // 2. Create a document in /roles_admin/{userId} to grant security rule permissions
+    const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+    batch.set(adminRoleRef, { isAdmin: true, promotedAt: new Date() }); // The content doesn't strictly matter, only existence.
+
     try {
-      await setDoc(userRef, { role: 'admin' }, { merge: true });
+      await batch.commit();
       toast({
         title: "Амжилттай",
         description: "Та одоо админ эрхтэй боллоо. Хуудсыг дахин ачаална уу.",
       });
-      // The useDoc hook will automatically refresh the profile data
+      // The useDoc hook for userProfile will refresh, and the header will update.
     } catch (error: any) {
       toast({
         variant: "destructive",

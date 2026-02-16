@@ -89,7 +89,9 @@ service cloud.firestore {
     }
 
     match /roles_admin/{userId} {
-      allow read, write: if false; // Must be managed by a trusted server process.
+      // DEV-ONLY: Allow a user to make themselves an admin for development purposes.
+      // In production, this should be 'if false' and managed by a trusted server process.
+      allow read, write: if isOwner(userId) || isAdmin();
     }
 
     match /lotteries/{lotteryId} {
