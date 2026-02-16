@@ -2,7 +2,7 @@
 import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { UI } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { TicketPanel } from "./ticket-panel";
@@ -11,6 +11,7 @@ import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { Lottery } from "@/lib/types";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
 
 function LotteryDetailSkeleton() {
   return (
@@ -39,28 +40,46 @@ function LotteryDetailSkeleton() {
   );
 }
 
+function WinnerInfoCard({ lottery }: { lottery: Lottery }) {
+    if (lottery.status !== 'finished' || (!lottery.winnerTicket && !lottery.winnerUserId)) {
+        return null;
+    }
+
+    return (
+        <Card className="bg-green-500/10 border-green-500/50">
+            <CardHeader>
+                <CardTitle className="text-green-400 font-headline">🎉 {UI.LOTTERY.WINNER_ANNOUNCEMENT} 🎉</CardTitle>
+                <CardDescription className="text-green-400/80">
+                   {UI.LOTTERY.WINNER_DETERMINED} on {lottery.updatedAt ? format(lottery.updatedAt.toDate(), 'yyyy-MM-dd') : ''}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                {lottery.winnerTicket && (
+                    <p className="text-muted-foreground">{UI.LOTTERY.WINNING_TICKET}: <span className="font-bold text-lg text-primary-foreground">#{lottery.winnerTicket}</span></p>
+                )}
+                {lottery.winnerUserId && (
+                    <p className="text-muted-foreground">Ялагч хэрэглэгч: <span className="font-mono text-xs text-primary-foreground">{lottery.winnerUserId}</span></p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function LotteryDetailPage() {
   const params = useParams();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const firestore = useFirestore();
-  const { user } = useUser(); // useUser provides user state
+  const { user } = useUser();
 
   const lotteryDocRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
     return doc(firestore, 'lotteries', id);
   }, [firestore, id]);
 
-  const { data: lottery, isLoading, error } = useDoc<Lottery>(lotteryDocRef);
+  const { data: lottery, isLoading } = useDoc<Lottery>(lotteryDocRef);
 
   if (isLoading) {
     return <LotteryDetailSkeleton />;
-  }
-
-  if (error) {
-    console.error("Error fetching lottery:", error);
-    // Maybe redirect or show a proper error page
-    notFound();
   }
 
   if (!lottery) {
@@ -77,7 +96,7 @@ export default function LotteryDetailPage() {
             <CarouselContent>
               {images.length > 0 ? images.map((image, index) => (
                 <CarouselItem key={index}>
-                  <Card className="overflow-hidden">
+                  <Card className="overflow-hidden rounded-xl">
                     <CardContent className="p-0">
                       <Image
                         src={image!.imageUrl}
@@ -115,9 +134,10 @@ export default function LotteryDetailPage() {
         </div>
         <div className="space-y-8">
           <div>
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-primary-foreground mb-3 font-headline">
+            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-primary-foreground mb-2 font-headline">
               {lottery.carModel}
             </h1>
+             <p className="text-xl text-muted-foreground mb-4">{lottery.title}</p>
             <div className="flex items-center gap-4 text-muted-foreground mb-6">
               <span>{UI.LOTTERY.YEAR}: {lottery.year}</span>
               <Badge variant={lottery.status === 'active' ? 'secondary' : 'destructive'}>
@@ -129,16 +149,8 @@ export default function LotteryDetailPage() {
             </p>
           </div>
 
-          {lottery.status === 'finished' && (lottery.winnerTicket || lottery.winnerUser) ? (
-            <Card>
-                <CardContent className="p-6">
-                    <h3 className="text-lg font-bold text-primary mb-4">{UI.LOTTERY.WINNER_ANNOUNCEMENT}</h3>
-                    <div className="space-y-2">
-                        {lottery.winnerTicket && <p className="text-muted-foreground">{UI.LOTTERY.WINNING_TICKET}: <span className="font-bold text-lg text-primary-foreground">{lottery.winnerTicket}</span></p>}
-                        {lottery.winnerUser && <p className="text-muted-foreground">Ялагч: <span className="font-bold text-lg text-primary-foreground">{lottery.winnerUser}</span></p>}
-                    </div>
-                </CardContent>
-            </Card>
+          {lottery.status === 'finished' ? (
+            <WinnerInfoCard lottery={lottery} />
           ) : (
             <TicketPanel lottery={lottery} user={user} />
           )}
