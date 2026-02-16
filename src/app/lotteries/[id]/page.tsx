@@ -76,14 +76,33 @@ export default function LotteryDetailPage() {
     return doc(firestore, 'lotteries', id);
   }, [firestore, id]);
 
-  const { data: lottery, isLoading: isDocLoading } = useDoc<Lottery>(lotteryDocRef);
+  const { data: lottery, isLoading, error } = useDoc<Lottery>(lotteryDocRef);
 
-  const isLoading = isDocLoading || !id;
+  if (error) {
+    // This will show a more specific error to the user instead of a generic 404
+    // if the issue is related to permissions or other Firestore errors.
+    return (
+        <div className="container flex items-center justify-center min-h-[50vh]">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle className="text-center text-destructive">{UI.GENERAL.ERROR}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-center text-muted-foreground">
+                        Could not load lottery details.
+                    </p>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
-  if (isLoading) {
+  // If we don't have an ID from the URL yet, or if the document is still loading, show the skeleton.
+  if (!id || isLoading) {
     return <LotteryDetailSkeleton />;
   }
 
+  // After loading, if there's still no lottery data, it's a genuine 404.
   if (!lottery) {
     notFound();
   }

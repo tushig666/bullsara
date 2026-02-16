@@ -6,6 +6,7 @@ import { UI } from "@/lib/i18n";
 import { notFound, useParams } from "next/navigation";
 import { LotteryForm } from "../../lottery-form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 function EditLotteryPageSkeleton() {
   return (
@@ -35,14 +36,31 @@ export default function EditLotteryPage() {
         return doc(firestore, 'lotteries', id);
     }, [firestore, id]);
 
-    const { data: lottery, isLoading: isDocLoading } = useDoc<Lottery>(lotteryDocRef);
+    const { data: lottery, isLoading, error } = useDoc<Lottery>(lotteryDocRef);
 
-    const isLoading = isDocLoading || !id;
-
-    if (isLoading) {
+    if (error) {
+        return (
+            <div className="container flex items-center justify-center min-h-[50vh]">
+                <Card className="w-full max-w-md">
+                    <CardHeader>
+                        <CardTitle className="text-center text-destructive">{UI.GENERAL.ERROR}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-center text-muted-foreground">
+                            Could not load lottery details for editing.
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+    
+    // If we don't have an ID or are still loading, show the skeleton.
+    if (!id || isLoading) {
         return <EditLotteryPageSkeleton />;
     }
 
+    // After loading, if no lottery is found, trigger 404.
     if (!lottery) {
         notFound();
     }
