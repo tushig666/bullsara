@@ -11,10 +11,11 @@ import Link from 'next/link';
 import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'И-мэйл хаягаа зөв оруулна уу.' }),
@@ -27,6 +28,13 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const auth = useAuth();
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,8 +72,8 @@ export default function SignupPage() {
         description: "Амжилттай бүртгүүлж, нэвтэрлээ.",
       });
       
-      router.push('/');
-      // The AuthListener will handle the session cookie creation and router.refresh()
+      // Navigation is now handled by the useEffect hook and the AuthListener.
+      // No router.push('/') here.
 
     } catch (error: any) {
       let errorMessage = "Бүртгүүлэх үед алдаа гарлаа. Та дахин оролдоно уу.";
@@ -82,6 +90,14 @@ export default function SignupPage() {
       });
       setIsSubmitting(false);
     }
+  }
+
+  if (isUserLoading || user) {
+    return (
+        <div className="flex justify-center items-center min-h-[200px]">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
   }
 
   return (

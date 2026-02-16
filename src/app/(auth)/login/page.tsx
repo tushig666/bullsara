@@ -11,9 +11,10 @@ import Link from 'next/link';
 import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'И-мэйл хаягаа зөв оруулна уу.' }),
@@ -25,6 +26,13 @@ export default function LoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,8 +61,8 @@ export default function LoginPage() {
         description: UI.AUTH.LOGIN_SUCCESS,
       });
 
-      router.push('/');
-      // The AuthListener will handle the router.refresh() after session is set.
+      // Navigation is now handled by the useEffect hook and the AuthListener.
+      // No router.push('/') here.
 
     } catch (error: any) {
       let errorMessage = "Нэвтрэх үед алдаа гарлаа. Та дахин оролдоно уу.";
@@ -69,6 +77,14 @@ export default function LoginPage() {
       });
       setIsSubmitting(false);
     }
+  }
+  
+  if (isUserLoading || user) {
+    return (
+        <div className="flex justify-center items-center min-h-[200px]">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
   }
 
   return (

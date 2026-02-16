@@ -24,11 +24,11 @@ export function AuthListener() {
   useEffect(() => {
     if (!auth) return;
 
-    // Set initial user state
+    // Set initial user state on component mount
     userRef.current = auth.currentUser;
 
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      // Check if user state has actually changed
+      // Check if user state has actually changed to prevent redundant operations
       if (user?.uid !== userRef.current?.uid) {
         userRef.current = user;
         const idToken = user ? await user.getIdToken() : null;
