@@ -72,11 +72,16 @@ export default function LoginPage() {
       router.push('/');
       router.refresh();
 
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "Нэвтрэх үед алдаа гарлаа. Та дахин оролдоно уу.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = "Нэвтрэх нэр эсвэл нууц үг буруу байна.";
+      }
+      
       toast({
         variant: 'destructive',
         title: UI.GENERAL.ERROR,
-        description: "Нэвтрэх нэр эсвэл нууц үг буруу байна.",
+        description: errorMessage,
       });
       setIsSubmitting(false);
     }

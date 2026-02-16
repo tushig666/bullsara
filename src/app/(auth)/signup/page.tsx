@@ -84,10 +84,17 @@ export default function SignupPage() {
       router.refresh();
 
     } catch (error: any) {
+      let errorMessage = "Бүртгүүлэх үед алдаа гарлаа. Та дахин оролдоно уу.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "Энэ и-мэйл хаяг аль хэдийн бүртгэлтэй байна.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Нууц үг дор хаяж 6 тэмдэгттэй байх ёстой.";
+      }
+      
       toast({
         variant: 'destructive',
         title: UI.GENERAL.ERROR,
-        description: error.message,
+        description: errorMessage,
       });
       setIsSubmitting(false);
     }
