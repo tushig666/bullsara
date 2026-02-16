@@ -6,7 +6,7 @@ import { OrderActions } from "./actions";
 import { format } from "date-fns";
 import { Order, Timestamp } from "@/lib/types";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy } from "firebase/firestore";
+import { collection, query, orderBy, collectionGroup } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function formatClientTimestamp(timestamp: Timestamp): string {
@@ -49,7 +49,7 @@ export default function AdminOrdersPage() {
     const firestore = useFirestore();
     const ordersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'));
+        return query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc'));
     }, [firestore]);
 
     const { data: orders, isLoading } = useCollection<Order>(ordersQuery);

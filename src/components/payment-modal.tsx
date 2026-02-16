@@ -51,11 +51,8 @@ export function PaymentModal({ isOpen, onClose, lotteryId, quantity, totalPrice 
             if (lotteryData.remainingTickets < quantity) {
                 throw new Error("Үлдэгдэл хүрэлцэхгүй байна.");
             }
-
-            // This transaction is only for checking. The actual ticket deduction happens on payment confirmation by admin.
-            // A real app might "reserve" tickets here by decrementing a counter.
             
-            const newOrderRef = doc(collection(firestore, "orders"));
+            const newOrderRef = doc(collection(firestore, "users", user.uid, "orders"));
             transaction.set(newOrderRef, {
                 userId: user.uid,
                 lotteryId,

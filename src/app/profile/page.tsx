@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { redirect } from "next/navigation";
-import { collection, query, where, getDoc, doc, orderBy, setDoc } from "firebase/firestore";
+import { collection, query, getDoc, doc, orderBy, setDoc } from "firebase/firestore";
 import { Lottery, Ticket, UserProfile } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -118,7 +118,7 @@ export default function ProfilePage() {
 
   const ticketsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, "tickets"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
+    return query(collection(firestore, "users", user.uid, "tickets"), orderBy("createdAt", "desc"));
   }, [firestore, user]);
 
   const { data: tickets } = useCollection<Ticket>(ticketsQuery);

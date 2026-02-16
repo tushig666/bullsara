@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Loader2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
-import { doc, deleteDoc, writeBatch, collection, getDocs, updateDoc, query, where } from 'firebase/firestore';
+import { doc, deleteDoc, writeBatch, collection, getDocs, updateDoc, query, where, collectionGroup } from 'firebase/firestore';
 
 export function AdminLotteryActions({ lottery }: { lottery: Lottery }) {
   const router = useRouter();
@@ -47,7 +47,7 @@ export function AdminLotteryActions({ lottery }: { lottery: Lottery }) {
     setIsDrawing(true);
     
     try {
-        const ticketsCollectionRef = collection(firestore, "tickets");
+        const ticketsCollectionRef = collectionGroup(firestore, "tickets");
         const q = query(ticketsCollectionRef, where("lotteryId", "==", lottery.id));
 
         const ticketsSnapshot = await getDocs(q);

@@ -22,7 +22,7 @@ export function OrderActions({ order }: { order: Order }) {
 
     try {
         await runTransaction(firestore, async (transaction) => {
-            const orderRef = doc(firestore, "orders", order.id);
+            const orderRef = doc(firestore, "users", order.userId, "orders", order.id);
             const orderDoc = await transaction.get(orderRef);
             if (!orderDoc.exists() || orderDoc.data()?.status === 'paid') {
                 throw new Error("Захиалга олдсонгүй эсвэл аль хэдийн төлөгдсөн байна.");
@@ -56,7 +56,7 @@ export function OrderActions({ order }: { order: Order }) {
             // Create tickets within the transaction
             for (let i = 0; i < orderData.quantity; i++) {
                 const ticketNumber = nextTicketStart + i;
-                const newTicketRef = doc(collection(firestore, "tickets"));
+                const newTicketRef = doc(collection(firestore, "users", orderData.userId, "tickets"));
                 const newTicketData: Omit<Ticket, 'id'> = {
                     userId: orderData.userId,
                     lotteryId: orderData.lotteryId,
