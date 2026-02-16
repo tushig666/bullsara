@@ -1,22 +1,9 @@
-'use client';
-
 import { LotteryCard } from '@/components/lottery-card';
 import { getLotteries } from '@/app/actions';
 import { UI } from '@/lib/i18n';
-import { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { Lottery } from '@/lib/types';
-
-function LotteryGrid({ lotteries }: { lotteries: Lottery[] }) {
-  if (!lotteries) return null;
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
-      {lotteries.map((lottery, index) => (
-        <LotteryCard key={lottery.id} lottery={lottery} index={index} />
-      ))}
-    </div>
-  );
-}
+import { Suspense } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function LotteryGridSkeleton() {
     return (
@@ -34,20 +21,23 @@ function LotteryGridSkeleton() {
     );
 }
 
+async function ActiveLotteries() {
+  const lotteries = await getLotteries('active');
+  
+  if (lotteries.length === 0) {
+    return <p className="text-center text-muted-foreground">Одоогоор идэвхтэй сугалаа байхгүй байна.</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+      {lotteries.map((lottery, index) => (
+        <LotteryCard key={lottery.id} lottery={lottery} index={index} />
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
-    const [lotteries, setLotteries] = useState<Lottery[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        async function fetchLotteries() {
-            setIsLoading(true);
-            const activeLotteries = await getLotteries('active');
-            setLotteries(activeLotteries);
-            setIsLoading(false);
-        }
-        fetchLotteries();
-    }, []);
-
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         <div className="text-center mb-16">
@@ -55,7 +45,9 @@ export default function Home() {
                 {UI.HOME.TITLE}
             </h1>
         </div>
-        {isLoading ? <LotteryGridSkeleton /> : <LotteryGrid lotteries={lotteries} />}
+        <Suspense fallback={<LotteryGridSkeleton />}>
+            <ActiveLotteries />
+        </Suspense>
     </div>
   );
 }
