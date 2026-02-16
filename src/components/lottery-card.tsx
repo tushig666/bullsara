@@ -62,6 +62,12 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
               <Badge variant="secondary">{`${UI.LOTTERY.REMAINING_TICKETS}: ${lottery.remainingTickets}`}</Badge>
             </div>
             <p className="text-sm text-muted-foreground mt-4 line-clamp-2">{lottery.description}</p>
+            <div className="mt-6 pt-4 border-t border-border/40">
+              <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Нэгж үнэ</span>
+                  <span className="text-lg font-bold text-primary-foreground">{lottery.pricePerTicket.toLocaleString()} ₮</span>
+              </div>
+            </div>
           </div>
         </div>
       </Link>
