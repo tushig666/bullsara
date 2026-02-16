@@ -32,14 +32,15 @@ export default function EditLotteryPage() {
     const firestore = useFirestore();
 
     const lotteryDocRef = useMemoFirebase(() => {
-        // useMemoFirebase will return null if firestore or id is not available yet,
-        // and useDoc will handle the null ref by waiting.
         if (!firestore || !id) return null;
         return doc(firestore, 'lotteries', id);
     }, [firestore, id]);
 
-    // useDoc returns the loading state. We should rely on it.
-    const { data: lottery, isLoading, error } = useDoc<Lottery>(lotteryDocRef);
+    const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
+
+    // We are loading if the doc is loading, or if we don't have a valid ref yet 
+    // because id or firestore is missing. This prevents a flash of 404 page.
+    const isLoading = isDocLoading || !lotteryDocRef;
 
     // 1. First, handle loading state
     if (isLoading) {
@@ -65,8 +66,8 @@ export default function EditLotteryPage() {
         );
     }
     
-    // 3. After loading and no errors, if data is still null, it's a 404.
-    // This check only happens once isLoading is false.
+    // 3. After loading (isDocLoading is false AND lotteryDocRef is not null) and no errors, 
+    // if data is still null, it's a 404.
     if (!lottery) {
         notFound();
     }

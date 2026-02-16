@@ -76,7 +76,11 @@ export default function LotteryDetailPage() {
     return doc(firestore, 'lotteries', id);
   }, [firestore, id]);
 
-  const { data: lottery, isLoading, error } = useDoc<Lottery>(lotteryDocRef);
+  const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
+
+  // We are loading if the doc is loading, or if we don't have a valid ref yet 
+  // because id or firestore is missing. This prevents a flash of 404 page.
+  const isLoading = isDocLoading || !lotteryDocRef;
 
   // 1. Handle loading state
   if (isLoading) {
