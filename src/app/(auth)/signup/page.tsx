@@ -21,19 +21,6 @@ const formSchema = z.object({
   password: z.string().min(6, { message: 'Нууц үг 6-аас доошгүй тэмдэгттэй байх ёстой.' }),
 });
 
-async function setSessionCookie(idToken: string) {
-  const response = await fetch('/api/auth', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ idToken }),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to set session cookie');
-  }
-}
-
 export default function SignupPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -72,16 +59,13 @@ export default function SignupPage() {
         createdAt: serverTimestamp(),
       });
       
-      const idToken = await user.getIdToken();
-      await setSessionCookie(idToken);
-      
       toast({
         title: UI.GENERAL.SUCCESS,
         description: "Амжилттай бүртгүүлж, нэвтэрлээ.",
       });
       
       router.push('/');
-      router.refresh();
+      // The AuthListener will handle the session cookie creation and router.refresh()
 
     } catch (error: any) {
       let errorMessage = "Бүртгүүлэх үед алдаа гарлаа. Та дахин оролдоно уу.";
