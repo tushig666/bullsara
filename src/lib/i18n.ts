@@ -78,7 +78,7 @@ export const UI = {
     CAR_MODEL: 'Машины модель',
     YEAR: 'Он',
     DESCRIPTION: 'Тайлбар',
-    IMAGES: 'Зургууд (URL, таслалаар тусгаарлана)',
+    IMAGES: 'Гол зураг',
     PRICE_PER_TICKET: 'Нэгж сугалааны үнэ',
     TOTAL_TICKETS: 'Нийт сугалааны тоо',
   },

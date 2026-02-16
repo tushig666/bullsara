@@ -15,13 +15,15 @@ import { Lottery } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const formSchema = z.object({
   title: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
   carModel: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
   year: z.coerce.number().min(1900, { message: 'Зөв он оруулна уу' }),
   description: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
-  images: z.string().min(1, { message: 'Дор хаяж нэг зурагны URL оруулна уу' }),
+  images: z.string().min(1, { message: 'Дор хаяж нэг зураг сонгоно уу' }),
   pricePerTicket: z.coerce.number().min(0, { message: 'Үнэ 0-ээс бага байж болохгүй' }),
   totalTickets: z.coerce.number().min(1, { message: 'Тоо 1-ээс бага байж болохгүй' }),
 });
@@ -44,7 +46,7 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
       carModel: lottery?.carModel || '',
       year: lottery?.year || new Date().getFullYear(),
       description: lottery?.description || '',
-      images: lottery?.images.join(', ') || '',
+      images: lottery?.images?.[0] || '',
       pricePerTicket: lottery?.pricePerTicket || 50000,
       totalTickets: lottery?.totalTickets || 10000,
     },
@@ -55,18 +57,21 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
     setIsSubmitting(true);
 
     try {
+        const dataPayload = {
+            ...values,
+            images: values.images ? [values.images] : [],
+        };
+
         if (isEditMode && lottery) {
             const lotteryRef = doc(firestore, 'lotteries', lottery.id);
             await setDoc(lotteryRef, {
-                ...values,
-                images: values.images.split(',').map(s => s.trim()),
+                ...dataPayload,
                 updatedAt: serverTimestamp(),
             }, { merge: true });
         } else {
             const lotteriesCollection = collection(firestore, 'lotteries');
             await addDoc(lotteriesCollection, {
-                ...values,
-                images: values.images.split(',').map(s => s.trim()),
+                ...dataPayload,
                 remainingTickets: values.totalTickets,
                 nextTicketNumber: 1,
                 status: 'active',
@@ -124,13 +129,30 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
               <FormMessage />
             </FormItem>
           )} />
-        <FormField control={form.control} name="images" render={({ field }) => (
+        <FormField
+          control={form.control}
+          name="images"
+          render={({ field }) => (
             <FormItem>
               <FormLabel>{UI.ADMIN.IMAGES}</FormLabel>
-              <FormControl><Textarea rows={3} {...field} /></FormControl>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Сугалааны гол зургийг сонгоно уу" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {PlaceHolderImages.map(image => (
+                    <SelectItem key={image.id} value={image.id}>
+                      {image.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
-          )} />
+          )}
+        />
         <FormField control={form.control} name="pricePerTicket" render={({ field }) => (
             <FormItem>
               <FormLabel>{UI.ADMIN.PRICE_PER_TICKET}</FormLabel>
