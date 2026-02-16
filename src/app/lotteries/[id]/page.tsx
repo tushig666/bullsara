@@ -120,11 +120,21 @@ export default function LotteryDetailPage() {
   }
   
   let finalImages: ImagePlaceholder[] = [];
-
-  if (lottery.images && lottery.images.length > 0 && lottery.images[0] !== '') {
-    finalImages = lottery.images
-      .map(id => PlaceHolderImages.find(img => img.id === id))
-      .filter((img): img is ImagePlaceholder => !!img);
+  
+  if (lottery.images && lottery.images.length > 0 && lottery.images[0]) {
+    const firstImage = lottery.images[0];
+    if (firstImage.startsWith('http') || firstImage.startsWith('https')) {
+        finalImages = lottery.images.map((url, i) => ({
+            id: `url-${i}`,
+            imageUrl: url,
+            imageHint: lottery.carModel,
+            description: `${lottery.title} - view ${i + 1}`,
+        }));
+    } else {
+        finalImages = lottery.images
+          .map(id => PlaceHolderImages.find(img => img.id === id))
+          .filter((img): img is ImagePlaceholder => !!img);
+    }
   }
   
   if (finalImages.length === 0) {
@@ -146,7 +156,7 @@ export default function LotteryDetailPage() {
                     <CardContent className="p-0">
                       <Image
                         src={image.imageUrl}
-                        alt={`${lottery.title} - view ${index + 1}`}
+                        alt={image.description}
                         width={800}
                         height={600}
                         data-ai-hint={image.imageHint}

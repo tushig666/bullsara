@@ -13,24 +13,31 @@ interface LotteryCardProps {
 }
 
 export function LotteryCard({ lottery, index }: LotteryCardProps) {
-    let image;
-    // If the lottery has a specific image ID, use it.
-    if (lottery.images && lottery.images.length > 0) {
-        image = PlaceHolderImages.find(img => img.id === lottery.images[0]);
-    }
+    let imageUrl;
+    let imageHint = 'car';
 
-    // If no specific image, try to find one based on car model hint
-    if (!image) {
-        const lowerCaseCarModel = lottery.carModel.toLowerCase();
-        // Find an image where the hint is included in the car model name, but exclude interior shots.
-        image = PlaceHolderImages.find(img => 
-            lowerCaseCarModel.includes(img.imageHint.toLowerCase()) && 
-            !img.imageHint.toLowerCase().includes('interior')
-        );
+    const firstImage = lottery.images?.[0];
+
+    if (firstImage && (firstImage.startsWith('http') || firstImage.startsWith('https'))) {
+        imageUrl = firstImage;
+        imageHint = lottery.carModel;
+    } else {
+        let image;
+        if (firstImage) {
+            image = PlaceHolderImages.find(img => img.id === firstImage);
+        }
+
+        if (!image) {
+            const lowerCaseCarModel = lottery.carModel.toLowerCase();
+            image = PlaceHolderImages.find(img => 
+                lowerCaseCarModel.includes(img.imageHint.toLowerCase()) && 
+                !img.imageHint.toLowerCase().includes('interior')
+            );
+        }
+        
+        imageUrl = image?.imageUrl || 'https://picsum.photos/seed/placeholder/800/450';
+        imageHint = image?.imageHint || 'car';
     }
-    
-    const imageUrl = image?.imageUrl || 'https://picsum.photos/seed/placeholder/800/450';
-    const imageHint = image?.imageHint || 'car';
 
   return (
     <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1.5">

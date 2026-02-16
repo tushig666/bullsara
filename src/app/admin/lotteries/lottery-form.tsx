@@ -15,15 +15,13 @@ import { Lottery } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const formSchema = z.object({
   title: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
   carModel: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
   year: z.coerce.number().min(1900, { message: 'Зөв он оруулна уу' }),
   description: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
-  images: z.string().min(1, { message: 'Дор хаяж нэг зураг сонгоно уу' }),
+  images: z.string().url({ message: "Хүчинтэй URL хаяг оруулна уу." }).or(z.literal('')),
   pricePerTicket: z.coerce.number().min(0, { message: 'Үнэ 0-ээс бага байж болохгүй' }),
   totalTickets: z.coerce.number().min(1, { message: 'Тоо 1-ээс бага байж болохгүй' }),
 });
@@ -135,20 +133,9 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>{UI.ADMIN.IMAGES}</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Сугалааны гол зургийг сонгоно уу" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {PlaceHolderImages.map(image => (
-                    <SelectItem key={image.id} value={image.id}>
-                      {image.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <Input placeholder="https://example.com/image.png" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
