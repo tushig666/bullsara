@@ -4,9 +4,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { OrderActions } from "./actions";
 import { format } from "date-fns";
+import { Order, Timestamp } from "@/lib/types";
+
+function formatTimestamp(timestamp: Timestamp): string {
+    if (timestamp && typeof (timestamp as any).toDate === 'function') {
+        return format((timestamp as any).toDate(), 'yyyy-MM-dd HH:mm');
+    }
+    return "Invalid Date";
+}
 
 export default async function AdminOrdersPage() {
-    const orders = await getOrders();
+    const orders: Order[] = await getOrders();
     
     return (
         <div>
@@ -19,7 +27,7 @@ export default async function AdminOrdersPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Order ID</TableHead>
-                            <TableHead>User Email</TableHead>
+                            <TableHead>User ID</TableHead>
                             <TableHead>Нийт дүн</TableHead>
                             <TableHead>Огноо</TableHead>
                             <TableHead>Статус</TableHead>
@@ -30,9 +38,9 @@ export default async function AdminOrdersPage() {
                         {orders.map((order) => (
                             <TableRow key={order.id}>
                                 <TableCell className="font-mono text-xs">{order.id}</TableCell>
-                                <TableCell>{order.userId}</TableCell>
+                                <TableCell className="font-mono text-xs">{order.userId}</TableCell>
                                 <TableCell>{order.totalPrice.toLocaleString()} ₮</TableCell>
-                                <TableCell>{format(order.createdAt.toDate(), 'yyyy-MM-dd HH:mm')}</TableCell>
+                                <TableCell>{formatTimestamp(order.createdAt)}</TableCell>
                                 <TableCell>
                                     <Badge variant={order.status === 'paid' ? 'secondary' : 'outline'}>
                                         {order.status === 'paid' ? 'Төлөгдсөн' : 'Хүлээгдэж буй'}

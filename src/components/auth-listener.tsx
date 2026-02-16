@@ -1,11 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
-import { getAuth, onIdTokenChanged } from 'firebase/auth';
-import { app } from '@/lib/firebase/client';
-
-// Initialize auth only once
-const auth = getAuth(app);
+import { useEffect, useRef } from 'react';
+import { onIdTokenChanged, User } from 'firebase/auth';
+import { useAuth } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 // This function communicates with our server-side API route to set/clear the session cookie.
 async function syncSessionCookie(idToken: string | null) {
@@ -19,15 +17,29 @@ async function syncSessionCookie(idToken: string | null) {
 }
 
 export function AuthListener() {
+  const auth = useAuth();
+  const router = useRouter();
+  const userRef = useRef<User | null>(null);
+
   useEffect(() => {
+    if (!auth) return;
+
+    // Set initial user state
+    userRef.current = auth.currentUser;
+
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      const idToken = user ? await user.getIdToken() : null;
-      await syncSessionCookie(idToken);
+      // Check if user state has actually changed
+      if (user?.uid !== userRef.current?.uid) {
+        userRef.current = user;
+        const idToken = user ? await user.getIdToken() : null;
+        await syncSessionCookie(idToken);
+        router.refresh();
+      }
     });
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, []);
+  }, [auth, router]);
 
   return null; // This component doesn't render anything.
 }

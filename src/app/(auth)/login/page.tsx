@@ -12,29 +12,19 @@ import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { signInWithEmailAndPassword, type UserCredential } from 'firebase/auth';
-import { auth } from '@/lib/firebase/client';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'И-мэйл хаягаа зөв оруулна уу.' }),
   password: z.string().min(6, { message: 'Нууц үг 6-аас доошгүй тэмдэгттэй байх ёстой.' }),
 });
 
-const syncSession = async (userCredential: UserCredential) => {
-    const idToken = await userCredential.user.getIdToken();
-    await fetch('/api/auth', {
-        method: 'POST',
-        headers: {
-        'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
-    });
-};
-
 export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const auth = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,16 +36,29 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
+    if (!auth) {
+        toast({
+            variant: 'destructive',
+            title: UI.GENERAL.ERROR,
+            description: "Authentication service is not available.",
+        });
+        setIsSubmitting(false);
+        return;
+    }
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      await syncSession(userCredential);
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      // The AuthListener will handle syncing the session and refreshing the page.
       
       toast({
         title: UI.GENERAL.SUCCESS,
         description: UI.AUTH.LOGIN_SUCCESS,
       });
-      router.push('/');
-      router.refresh();
+
+      // We just need to wait for the AuthListener to do its job.
+      // A small delay can help ensure the session is set before we navigate,
+      // but router.refresh() in the listener is more reliable.
+      router.replace('/');
+
     } catch (error) {
       toast({
         variant: 'destructive',

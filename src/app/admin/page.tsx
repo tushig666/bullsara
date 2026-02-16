@@ -1,22 +1,7 @@
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase/client";
+import { getStats } from "@/app/actions";
 import { UI } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ticket, ListOrdered, Users } from "lucide-react";
-
-async function getStats() {
-    const [lotteriesSnap, ordersSnap, usersSnap] = await Promise.all([
-        getDocs(collection(db, "lotteries")),
-        getDocs(collection(db, "orders")),
-        getDocs(collection(db, "users")),
-    ]);
-    return {
-        lotteries: lotteriesSnap.size,
-        orders: ordersSnap.size,
-        users: usersSnap.size,
-    };
-}
-
 
 export default async function AdminDashboard() {
   const stats = await getStats();

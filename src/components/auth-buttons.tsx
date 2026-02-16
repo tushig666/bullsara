@@ -1,23 +1,23 @@
 "use client";
 
-import { signOutUser } from "@/app/actions";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { UI } from "@/lib/i18n";
 import { LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
 
 export function SignOutButton() {
-  const router = useRouter();
+  const auth = useAuth();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
-    await signOutUser();
+    if (!auth) return;
+    await signOut(auth);
+    // The AuthListener component will handle cookie deletion and page refresh.
     toast({
         title: "Амжилттай гарлаа"
     });
-    router.push('/');
-    router.refresh();
   };
 
   return (

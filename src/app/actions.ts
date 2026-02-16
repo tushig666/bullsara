@@ -1,84 +1,28 @@
 'use server';
 
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-} from 'firebase/auth';
-import {
-  doc,
-  setDoc,
-  serverTimestamp,
-  collection,
-  getDocs,
-  query,
-  where,
-  getDoc,
-  addDoc,
-  runTransaction,
-  updateDoc,
-  deleteDoc,
-  writeBatch,
-  Timestamp,
-  orderBy,
-  limit,
-} from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/client';
+import { Timestamp } from 'firebase-admin/firestore';
+import { adminDb } from '@/lib/firebase/admin';
 import { UI } from '@/lib/i18n';
 import { z } from 'zod';
 import { Lottery, LotteryStatus, Order, Ticket, UserProfile } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/lib/auth';
-import { redirect } from 'next/navigation';
-
-const emailSchema = z.string().email();
-const passwordSchema = z.string().min(6);
-
-const authCredentialsSchema = z.object({ email: emailSchema, password: passwordSchema });
-
-// Auth Actions
-export async function signUpUser({ email, password }: z.infer<typeof authCredentialsSchema>) {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    await setDoc(doc(db, 'users', user.uid), {
-      email: user.email,
-      role: 'user',
-      createdAt: serverTimestamp(),
-    });
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-export async function signInUser({ email, password }: z.infer<typeof authCredentialsSchema>) {
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: "Нэвтрэх нэр эсвэл нууц үг буруу байна." };
-  }
-}
-
-export async function signOutUser() {
-  try {
-    await signOut(auth);
-    // The client will handle API call to clear session cookie
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
 
 // Lottery Actions
 export async function getLotteries(status?: LotteryStatus): Promise<Lottery[]> {
   try {
-    const lotteriesRef = collection(db, 'lotteries');
-    const q = status ? query(lotteriesRef, where('status', '==', status)) : lotteriesRef;
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lottery));
+    let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = adminDb.collection('lotteries');
+    if (status) {
+      query = query.where('status', '==', status);
+    }
+    const snapshot = await query.get();
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+            id: doc.id, 
+            ...data,
+        } as Lottery
+    });
   } catch (error) {
     console.error("Error getting lotteries:", error);
     return [];
@@ -87,10 +31,14 @@ export async function getLotteries(status?: LotteryStatus): Promise<Lottery[]> {
 
 export async function getLottery(id: string): Promise<Lottery | null> {
   try {
-    const docRef = doc(db, 'lotteries', id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() } as Lottery;
+    const docRef = adminDb.collection('lotteries').doc(id);
+    const docSnap = await docRef.get();
+    if (docSnap.exists) {
+      const data = docSnap.data();
+       return { 
+            id: docSnap.id, 
+            ...data,
+        } as Lottery
     }
     return null;
   } catch (error) {
@@ -117,13 +65,13 @@ export async function createOrder(lotteryId: string, quantity: number) {
 
   try {
     const totalPrice = lottery.pricePerTicket * quantity;
-    const orderRef = await addDoc(collection(db, 'orders'), {
+    const orderRef = await adminDb.collection('orders').add({
       userId: user.id,
       lotteryId,
       quantity,
       totalPrice,
       status: 'pending',
-      createdAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
     });
     return { success: true, orderId: orderRef.id };
   } catch (error: any) {
@@ -153,14 +101,14 @@ const lotterySchema = z.object({
 export async function createLottery(values: z.infer<typeof lotterySchema>) {
   await verifyAdmin();
   try {
-    await addDoc(collection(db, 'lotteries'), {
+    await adminDb.collection('lotteries').add({
       ...values,
       images: values.images.split(',').map(s => s.trim()),
       remainingTickets: values.totalTickets,
       status: 'active',
       winnerTicket: null,
       winnerUser: null,
-      createdAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
     });
     revalidatePath('/admin/lotteries');
     revalidatePath('/');
@@ -173,8 +121,8 @@ export async function createLottery(values: z.infer<typeof lotterySchema>) {
 export async function updateLottery(id: string, values: z.infer<typeof lotterySchema>) {
   await verifyAdmin();
   try {
-    const lotteryRef = doc(db, 'lotteries', id);
-    await updateDoc(lotteryRef, {
+    const lotteryRef = adminDb.collection('lotteries').doc(id);
+    await lotteryRef.update({
         ...values,
         images: values.images.split(',').map(s => s.trim()),
     });
@@ -190,7 +138,7 @@ export async function updateLottery(id: string, values: z.infer<typeof lotterySc
 export async function deleteLottery(id: string) {
   await verifyAdmin();
   try {
-    await deleteDoc(doc(db, 'lotteries', id));
+    await adminDb.collection('lotteries').doc(id).delete();
     revalidatePath('/admin/lotteries');
     revalidatePath('/');
     return { success: true };
@@ -202,7 +150,7 @@ export async function deleteLottery(id: string) {
 export async function getOrders(): Promise<Order[]> {
   await verifyAdmin();
   try {
-    const snapshot = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc')));
+    const snapshot = await adminDb.collection('orders').orderBy('createdAt', 'desc').get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
   } catch (error) {
     console.error("Error getting orders:", error);
@@ -213,22 +161,22 @@ export async function getOrders(): Promise<Order[]> {
 export async function confirmPayment(orderId: string) {
     await verifyAdmin();
     try {
-        await runTransaction(db, async (transaction) => {
-            const orderRef = doc(db, "orders", orderId);
+        await adminDb.runTransaction(async (transaction) => {
+            const orderRef = adminDb.collection("orders").doc(orderId);
             const orderDoc = await transaction.get(orderRef);
-            if (!orderDoc.exists() || orderDoc.data().status === 'paid') {
+            if (!orderDoc.exists || orderDoc.data()?.status === 'paid') {
                 throw "Захиалга олдсонгүй эсвэл аль хэдийн төлөгдсөн байна.";
             }
             
-            const orderData = orderDoc.data();
-            const lotteryRef = doc(db, "lotteries", orderData.lotteryId);
+            const orderData = orderDoc.data()!;
+            const lotteryRef = adminDb.collection("lotteries").doc(orderData.lotteryId);
             const lotteryDoc = await transaction.get(lotteryRef);
 
-            if (!lotteryDoc.exists()) {
+            if (!lotteryDoc.exists) {
                 throw "Сугалаа олдсонгүй.";
             }
 
-            const lotteryData = lotteryDoc.data();
+            const lotteryData = lotteryDoc.data()!;
             if (lotteryData.remainingTickets < orderData.quantity) {
                 throw "Үлдэгдэл хүрэлцэхгүй байна.";
             }
@@ -238,18 +186,23 @@ export async function confirmPayment(orderId: string) {
             transaction.update(orderRef, { status: 'paid' });
 
             // Ticket generation
-            const ticketsCollectionRef = collection(db, "tickets");
+            const ticketsCollectionRef = adminDb.collection("users").doc(orderData.userId).collection("tickets");
+            const lotteryTicketsCollectionRef = adminDb.collection("lotteries").doc(orderData.lotteryId).collection("tickets");
+
             const startTicketNumber = lotteryData.totalTickets - lotteryData.remainingTickets + 1;
             for (let i = 0; i < orderData.quantity; i++) {
                 const ticketNumber = startTicketNumber + i;
-                const ticketRef = doc(ticketsCollectionRef);
-                transaction.set(ticketRef, {
+                const newTicket = {
                     userId: orderData.userId,
                     lotteryId: orderData.lotteryId,
                     ticketNumber: ticketNumber,
                     orderId: orderId,
-                    createdAt: serverTimestamp(),
-                });
+                    createdAt: Timestamp.now(),
+                };
+                
+                const ticketDocRef = ticketsCollectionRef.doc();
+                transaction.set(ticketDocRef, newTicket);
+                transaction.set(lotteryTicketsCollectionRef.doc(ticketDocRef.id), newTicket);
             }
         });
         
@@ -269,8 +222,8 @@ export async function drawWinner(lotteryId: string) {
             throw "Сугалаа олдсонгүй эсвэл дууссан байна.";
         }
 
-        const ticketsQuery = query(collection(db, "tickets"), where("lotteryId", "==", lotteryId));
-        const ticketsSnapshot = await getDocs(ticketsQuery);
+        const ticketsQuery = adminDb.collection("lotteries").doc(lotteryId).collection("tickets");
+        const ticketsSnapshot = await ticketsQuery.get();
         const tickets = ticketsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ticket));
 
         if (tickets.length === 0) {
@@ -280,15 +233,14 @@ export async function drawWinner(lotteryId: string) {
         const winningTicketIndex = Math.floor(Math.random() * tickets.length);
         const winningTicket = tickets[winningTicketIndex];
 
-        const winnerUserRef = doc(db, 'users', winningTicket.userId);
-        const winnerUserDoc = await getDoc(winnerUserRef);
-        const winner = winnerUserDoc.exists() ? (winnerUserDoc.data() as UserProfile) : null;
+        const winnerUserDoc = await adminDb.collection('users').doc(winningTicket.userId).get();
+        const winner = winnerUserDoc.exists ? (winnerUserDoc.data() as UserProfile) : null;
         
-        const lotteryRef = doc(db, "lotteries", lotteryId);
-        await updateDoc(lotteryRef, {
+        const lotteryRef = adminDb.collection("lotteries").doc(lotteryId);
+        await lotteryRef.update({
             status: 'finished',
-            winnerTicket: winningTicket.ticketNumber,
-            winnerUser: winner ? winner.email : winningTicket.userId,
+            winnerTicketId: winningTicket.id,
+            winnerUserId: winningTicket.userId,
         });
 
         revalidatePath(`/admin/lotteries`);
@@ -308,12 +260,11 @@ export async function getMyTickets() {
     }
 
     try {
-        const ticketsQuery = query(collection(db, "tickets"), where("userId", "==", user.id), orderBy("createdAt", "desc"));
-        const ticketsSnapshot = await getDocs(ticketsQuery);
+        const ticketsQuery = adminDb.collection("users").doc(user.id).collection("tickets").orderBy("createdAt", "desc");
+        const ticketsSnapshot = await ticketsQuery.get();
         const tickets = ticketsSnapshot.docs.map(doc => doc.data() as Omit<Ticket, "id">);
         
-        // Group tickets by lottery
-        const groupedByLottery: Record<string, {lottery?: Lottery, ticketNumbers: number[]}> = {};
+        const groupedByLottery: Record<string, {lottery?: Lottery | null, ticketNumbers: number[]}> = {};
 
         for (const ticket of tickets) {
             if (!groupedByLottery[ticket.lotteryId]) {
@@ -332,4 +283,18 @@ export async function getMyTickets() {
         console.error("Error getting my tickets:", error);
         return [];
     }
+}
+
+export async function getStats() {
+    await verifyAdmin();
+    const [lotteriesSnap, ordersSnap, usersSnap] = await Promise.all([
+        adminDb.collection("lotteries").count().get(),
+        adminDb.collection("orders").count().get(),
+        adminDb.collection("users").count().get(),
+    ]);
+    return {
+        lotteries: lotteriesSnap.data().count,
+        orders: ordersSnap.data().count,
+        users: usersSnap.data().count,
+    };
 }

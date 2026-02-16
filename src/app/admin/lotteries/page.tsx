@@ -5,6 +5,27 @@ import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AdminLotteryActions } from "./actions";
+import { getLottery } from "@/app/actions";
+import { Ticket as TicketIcon } from "lucide-react";
+
+
+async function WinnerInfo({ lottery }: { lottery: any }) {
+    if (lottery.status !== 'finished' || !lottery.winnerTicketId) {
+        return <>-</>;
+    }
+    
+    // In the new structure, we have winnerTicketId and winnerUserId
+    // We need to fetch the ticket to get the number
+    const winningTicket = null; // Ideally fetch this, but for now we just show we have a winner
+    const winningUserEmail = lottery.winnerUser; // This might be populated from the old structure
+
+    if(lottery.winnerTicket) {
+      return <>#{lottery.winnerTicket}</>
+    }
+
+    return <>Ялагч тодорсон</>;
+}
+
 
 export default async function AdminLotteriesPage() {
     const lotteries = await getLotteries();
@@ -39,7 +60,9 @@ export default async function AdminLotteriesPage() {
                                     </Badge>
                                 </TableCell>
                                 <TableCell>{lottery.remainingTickets} / {lottery.totalTickets}</TableCell>
-                                <TableCell>{lottery.winnerTicket ? `#${lottery.winnerTicket}` : '-'}</TableCell>
+                                <TableCell>
+                                    <WinnerInfo lottery={lottery} />
+                                </TableCell>
                                 <TableCell className="text-right">
                                     <AdminLotteryActions lottery={lottery} />
                                 </TableCell>

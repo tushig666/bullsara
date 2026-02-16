@@ -1,12 +1,3 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { firebaseConfig } from '@/firebase/config';
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-export { app, auth, db, storage };
+// This file is intentionally left empty.
+// Firebase client instances should be managed by the FirebaseProvider and accessed via hooks (useAuth, useFirestore).
+// Please see src/firebase/provider.tsx and src/firebase/index.ts.

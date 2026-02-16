@@ -63,13 +63,13 @@ export default async function LotteryDetailPage({ params }: { params: { id: stri
             </p>
           </div>
 
-          {lottery.status === 'finished' && lottery.winnerTicket ? (
+          {lottery.status === 'finished' && (lottery.winnerTicket || lottery.winnerUser) ? (
             <Card>
                 <CardContent className="p-6">
                     <h3 className="text-lg font-bold text-primary mb-4">{UI.LOTTERY.WINNER_ANNOUNCEMENT}</h3>
                     <div className="space-y-2">
-                        <p className="text-muted-foreground">{UI.LOTTERY.WINNING_TICKET}: <span className="font-bold text-lg text-primary-foreground">{lottery.winnerTicket}</span></p>
-                        <p className="text-muted-foreground">Ялагч: <span className="font-bold text-lg text-primary-foreground">{lottery.winnerUser}</span></p>
+                        {lottery.winnerTicket && <p className="text-muted-foreground">{UI.LOTTERY.WINNING_TICKET}: <span className="font-bold text-lg text-primary-foreground">{lottery.winnerTicket}</span></p>}
+                        {lottery.winnerUser && <p className="text-muted-foreground">Ялагч: <span className="font-bold text-lg text-primary-foreground">{lottery.winnerUser}</span></p>}
                     </div>
                 </CardContent>
             </Card>

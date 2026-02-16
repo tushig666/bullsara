@@ -1,12 +1,10 @@
 import 'server-only';
 import { getAuth } from 'firebase-admin/auth';
-import { adminApp } from './firebase/admin';
+import { adminApp, adminDb } from './firebase/admin';
 import { cookies } from 'next/headers';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from './firebase/client';
 import type { UserProfile } from './types';
 
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<UserProfile | null> {
   const sessionCookie = cookies().get('session')?.value;
   if (!sessionCookie) {
     return null;
@@ -14,15 +12,24 @@ export async function getCurrentUser() {
 
   try {
     const decodedIdToken = await getAuth(adminApp).verifySessionCookie(sessionCookie, true);
-    const userDocRef = doc(db, 'users', decodedIdToken.uid);
-    const userDoc = await getDoc(userDocRef);
+    const userDocRef = adminDb.collection('users').doc(decodedIdToken.uid);
+    const userDocSnap = await userDocRef.get();
 
-    if (userDoc.exists()) {
-      return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+    if (userDocSnap.exists) {
+      const data = userDocSnap.data();
+      if (data) {
+        return { 
+          id: userDocSnap.id,
+          email: data.email,
+          role: data.role,
+          createdAt: data.createdAt,
+        } as UserProfile; // The Timestamp from admin SDK is compatible enough for server components
+      }
     }
     return null;
   } catch (error) {
-    console.error("Error verifying session cookie:", error);
+    // Error verifying cookie, e.g., it's expired.
+    // This is a normal case, so we don't need to log it as an error.
     return null;
   }
 }

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import './globals.css';
 import { Analytics } from "@vercel/analytics/react"
 import { AuthListener } from '@/components/auth-listener';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'Bullsara',
@@ -25,12 +26,14 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('font-body antialiased min-h-screen flex flex-col')}>
-        <AuthListener />
-        <Header />
-        <main className="flex-grow">{children}</main>
-        <Footer />
-        <Toaster />
-        <Analytics />
+        <FirebaseClientProvider>
+          <AuthListener />
+          <Header />
+          <main className="flex-grow">{children}</main>
+          <Footer />
+          <Toaster />
+          <Analytics />
+        </FirebaseClientProvider>
       </body>
     </html>
   );
