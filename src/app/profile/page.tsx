@@ -2,18 +2,84 @@
 import { UI } from "@/lib/i18n";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { redirect } from "next/navigation";
-import { collection, query, where, getDoc, doc, orderBy } from "firebase/firestore";
-import { Lottery, Ticket } from "@/lib/types";
+import { collection, query, where, getDoc, doc, orderBy, setDoc } from "firebase/firestore";
+import { Lottery, Ticket, UserProfile } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 type TicketGroup = {
   lottery: Lottery | null;
   ticketNumbers: number[];
 }
+
+function AdminPromotion() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isPromoting, setIsPromoting] = useState(false);
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, isLoading } = useDoc<UserProfile>(userProfileRef);
+
+  const handlePromote = async () => {
+    if (!firestore || !user) return;
+    setIsPromoting(true);
+    const userRef = doc(firestore, 'users', user.uid);
+    try {
+      await setDoc(userRef, { role: 'admin' }, { merge: true });
+      toast({
+        title: "Амжилттай",
+        description: "Та одоо админ эрхтэй боллоо. Хуудсыг дахин ачаална уу.",
+      });
+      // The useDoc hook will automatically refresh the profile data
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Алдаа",
+        description: error.message,
+      });
+    } finally {
+      setIsPromoting(false);
+    }
+  };
+  
+  if (isLoading) {
+    return <Skeleton className="h-36 w-full mt-12" />;
+  }
+
+  if (userProfile?.role === 'admin') {
+    return null; // Don't show if already an admin
+  }
+
+  return (
+     <Card className="mt-12 bg-destructive/10 border-destructive">
+      <CardHeader>
+        <div className="flex items-center gap-4">
+            <ShieldAlert className="h-8 w-8 text-destructive" />
+            <CardTitle className="text-destructive">Хөгжүүлэлтийн хэрэгсэл</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="mb-4 text-muted-foreground">
+          Админ самбарт нэвтрэх эрх авахын тулд доорх товчийг дарна уу. Энэ бол зөвхөн хөгжүүлэлтийн үед ашиглах түр боломж бөгөөд бодит орчинд ашиглах боломжгүйг анхаарна уу.
+        </p>
+        <Button onClick={handlePromote} disabled={isPromoting} variant="destructive">
+          {isPromoting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Намайг Админ болгох"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 
 function ProfileSkeleton() {
     return (
@@ -109,7 +175,7 @@ export default function ProfilePage() {
     redirect('/login');
   }
 
-  if (isLoading) {
+  if (isLoading && ticketGroups.length === 0) {
     return <ProfileSkeleton />;
   }
 
@@ -120,7 +186,7 @@ export default function ProfilePage() {
 
       <h2 className="text-2xl font-bold tracking-tight text-primary-foreground mb-8 font-headline">{UI.PROFILE.MY_TICKETS}</h2>
       
-      {ticketGroups.length === 0 ? (
+      {ticketGroups.length === 0 && !isLoading ? (
         <p className="text-muted-foreground">{UI.PROFILE.NO_TICKETS}</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -155,6 +221,7 @@ export default function ProfilePage() {
           ))}
         </div>
       )}
+      <AdminPromotion />
     </div>
   );
 }
