@@ -64,7 +64,7 @@ export default async function LotteryDetailPage({ params }: { params: { id: stri
           </div>
 
           {lottery.status === 'finished' && lottery.winnerTicket ? (
-            <Card className="bg-card/80">
+            <Card>
                 <CardContent className="p-6">
                     <h3 className="text-lg font-bold text-primary mb-4">{UI.LOTTERY.WINNER_ANNOUNCEMENT}</h3>
                     <div className="space-y-2">

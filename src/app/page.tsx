@@ -54,9 +54,6 @@ export default function Home() {
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-primary-foreground mb-4 font-headline">
                 {UI.HOME.TITLE}
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-                {UI.HOME.SUBTITLE}
-            </p>
         </div>
         {isLoading ? <LotteryGridSkeleton /> : <LotteryGrid lotteries={lotteries} />}
     </div>

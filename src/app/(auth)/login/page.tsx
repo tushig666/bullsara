@@ -67,7 +67,7 @@ export default function LoginPage() {
   }
 
   return (
-    <Card className="bg-card/80 backdrop-blur-sm">
+    <Card>
       <CardHeader>
         <CardTitle className="text-center text-2xl font-bold tracking-tight text-primary-foreground font-headline">
           {UI.AUTH.LOGIN_TITLE}

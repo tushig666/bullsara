@@ -41,7 +41,7 @@ export function TicketPanel({ lottery, user }: TicketPanelProps) {
 
   return (
     <>
-      <Card className="bg-card/80">
+      <Card>
         <CardContent className="p-6">
           <h3 className="text-lg font-bold text-primary mb-4">{UI.LOTTERY.PARTICIPATE}</h3>
           
