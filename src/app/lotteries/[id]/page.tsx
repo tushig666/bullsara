@@ -54,7 +54,7 @@ export default function LotteryDetailPage() {
     return doc(firestore, 'lotteries', id);
   }, [firestore, id]);
 
-  const { data: lottery, isLoading: isLotteryLoading, error } = useDoc<Lottery>(lotteryRef);
+  const { data: lottery, isLoading: isLotteryLoading } = useDoc<Lottery>(lotteryRef);
 
   useEffect(() => {
     // This effect handles the case where the document doesn't exist.
@@ -74,13 +74,6 @@ export default function LotteryDetailPage() {
       return <LotteryDetailSkeleton />;
   }
 
-  if (error) {
-    // This should be handled by the FirebaseErrorListener
-    console.error(error);
-    // Potentially render a user-friendly error message
-    return <p className="text-center py-16 text-destructive">Сугалааг ачаалахад алдаа гарлаа.</p>;
-  }
-  
   let finalImages: ImagePlaceholder[] = [];
   
   if (lottery.images && lottery.images.length > 0 && lottery.images[0]) {

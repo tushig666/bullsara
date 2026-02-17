@@ -209,7 +209,7 @@ export default function ProfilePage() {
                   <CardTitle>{group.lottery.title}</CardTitle>
                   <CardDescription>
                     {group.lottery.status === 'finished' ? 
-                    <span className="text-destructive">{UI.LOTTERY.WINNER_DETERMINED}</span> : 
+                    <span className="text-destructive">Дууссан</span> : 
                     <span className="text-green-500">Идэвхтэй</span>}
                   </CardDescription>
                 </CardHeader>
