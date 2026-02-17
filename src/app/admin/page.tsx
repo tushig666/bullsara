@@ -4,7 +4,7 @@ import { UI } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Ticket, ListOrdered, Users } from "lucide-react";
 import { useFirestore } from "@/firebase";
-import { collection, getCountFromServer } from "firebase/firestore";
+import { collection, getCountFromServer, collectionGroup } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
         try {
             const [productsSnap, ordersSnap, usersSnap] = await Promise.all([
                 getCountFromServer(collection(firestore, "products")),
-                getCountFromServer(collection(firestore, "orders")),
+                getCountFromServer(collectionGroup(firestore, "orders")),
                 getCountFromServer(collection(firestore, "users")),
             ]);
             setStats({
