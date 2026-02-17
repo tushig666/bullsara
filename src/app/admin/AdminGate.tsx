@@ -7,6 +7,7 @@ import { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { UI } from '@/lib/i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
 
 export function AdminGate({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -19,9 +20,23 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
 
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
     
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
+    
     const isLoading = isUserLoading || isProfileLoading;
 
-    if (isLoading) {
+    useEffect(() => {
+        if (!isLoading) {
+            if (user && userProfile && userProfile.role === 'admin') {
+                setIsAuthorized(true);
+            } else {
+                setIsAuthorized(false);
+            }
+            setIsAuthCheckComplete(true);
+        }
+    }, [isLoading, user, userProfile]);
+
+    if (!isAuthCheckComplete) {
         return (
             <div className="flex min-h-[50vh] items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -29,9 +44,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
         );
     }
 
-    if (!user || !userProfile || userProfile.role !== 'admin') {
-        // You can either use notFound() or show a custom component
-        // notFound(); 
+    if (!isAuthorized) {
         return (
              <div className="flex min-h-[50vh] items-center justify-center">
                 <Card className="w-full max-w-md">
