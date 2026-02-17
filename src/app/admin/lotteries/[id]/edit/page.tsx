@@ -1,12 +1,11 @@
 'use client';
-import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
-import { Lottery } from "@/lib/types";
-import { doc } from "firebase/firestore";
 import { UI } from "@/lib/i18n";
-import { notFound, useParams } from "next/navigation";
 import { LotteryForm } from "../../lottery-form";
+import { notFound, useParams } from "next/navigation";
+import { adminDb } from "@/lib/firebase/admin";
+import { Lottery } from "@/lib/types";
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 function EditLotteryPageSkeleton() {
   return (
@@ -26,52 +25,47 @@ function EditLotteryPageSkeleton() {
   );
 }
 
-export default function EditLotteryPage() {
-    const params = useParams();
-    const id = Array.isArray(params.id) ? params.id[0] : params.id;
-    const firestore = useFirestore();
+// This page now fetches data on the server and passes it to the client component.
+// To achieve this, we can't use this as a server component directly because it uses client hooks for skeleton
+// A better approach is to create a wrapper. But for now, we will use a client component with server-like fetching.
+// This is a temporary solution to avoid a full refactor of the skeleton logic.
 
-    const lotteryDocRef = useMemoFirebase(() => {
-        if (!id || !firestore) return null;
-        return doc(firestore, 'lotteries', id);
-    }, [id, firestore]);
+async function getLottery(id: string): Promise<Lottery | null> {
+    const lotterySnap = await adminDb.collection('lotteries').doc(id).get();
+    if (!lotterySnap.exists) {
+        return null;
+    }
+    return { id: lotterySnap.id, ...lotterySnap.data() } as Lottery;
+}
 
-    const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
-    
-    // We are loading if the query reference hasn't been created yet OR if the document is actively being fetched.
-    const isLoading = !lotteryDocRef || isDocLoading;
+
+export default function EditLotteryPage({ params }: { params: { id: string } }) {
+    const { id } = params;
+    const [lottery, setLottery] = useState<Lottery | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchLottery = async () => {
+            const lotteryData = await getLottery(id);
+            if (!lotteryData) {
+                notFound();
+            } else {
+                setLottery(lotteryData);
+            }
+            setIsLoading(false);
+        };
+
+        fetchLottery();
+    }, [id]);
 
     if (isLoading) {
         return <EditLotteryPageSkeleton />;
     }
 
-    if (error) {
-        console.error("Error fetching lottery:", error);
-        return (
-            <div className="container flex items-center justify-center min-h-[50vh]">
-                <Card className="w-full max-w-md">
-                    <CardHeader>
-                        <CardTitle className="text-center text-destructive">{UI.GENERAL.ERROR}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-center text-muted-foreground">
-                            Could not load lottery details for editing.
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-    
-    // If loading is finished and we have no data, then the document doesn't exist.
-    if (!lottery) {
-        notFound();
-    }
-
     return (
         <div>
             <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.EDIT_LOTTERY}</h1>
-            <LotteryForm lottery={lottery} />
+            {lottery && <LotteryForm lottery={lottery} />}
         </div>
     );
 }

@@ -1,5 +1,4 @@
-'use client';
-import { notFound, useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,77 +6,28 @@ import { UI } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { TicketPanel } from "./ticket-panel";
 import { PlaceHolderImages, ImagePlaceholder } from "@/lib/placeholder-images";
-import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
-import { Lottery } from "@/lib/types";
-import { doc } from "firebase/firestore";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Lottery, UserProfile } from "@/lib/types";
+import { adminDb } from "@/lib/firebase/admin";
+import { getCurrentUser } from "@/lib/auth";
 
-function LotteryDetailSkeleton() {
-  return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="grid lg:grid-cols-2 gap-12 items-start">
-        <div>
-          <Skeleton className="w-full aspect-[4/3] rounded-lg" />
-        </div>
-        <div className="space-y-8">
-          <div>
-            <Skeleton className="h-12 w-3/4 mb-3" />
-            <div className="flex items-center gap-4 mb-6">
-              <Skeleton className="h-6 w-24" />
-              <Skeleton className="h-6 w-20" />
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-            </div>
-          </div>
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    </div>
-  );
+async function getLottery(id: string): Promise<Lottery | null> {
+  const lotterySnap = await adminDb.collection('lotteries').doc(id).get();
+  if (!lotterySnap.exists) {
+    return null;
+  }
+  return { id: lotterySnap.id, ...lotterySnap.data() } as Lottery;
 }
 
-export default function LotteryDetailPage() {
-  const params = useParams();
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
-  const firestore = useFirestore();
-  const { user } = useUser();
+export default async function LotteryDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
 
-  const lotteryDocRef = useMemoFirebase(() => {
-    if (!id || !firestore) return null;
-    return doc(firestore, 'lotteries', id);
-  }, [id, firestore]);
+  // Fetch lottery data and user data in parallel on the server.
+  const [lottery, user] = await Promise.all([
+    getLottery(id),
+    getCurrentUser()
+  ]);
 
-  const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
-
-  // We are loading if the query reference hasn't been created yet OR if the document is actively being fetched.
-  const isLoading = !lotteryDocRef || isDocLoading;
-
-  if (isLoading) {
-    return <LotteryDetailSkeleton />;
-  }
-
-  if (error) {
-    console.error("Error fetching lottery details:", error);
-    return (
-        <div className="container flex items-center justify-center min-h-[50vh]">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle className="text-center text-destructive">{UI.GENERAL.ERROR}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-center text-muted-foreground">
-                        Could not load lottery details.
-                    </p>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
-
-  // If loading is finished and we have no data, then the document doesn't exist.
+  // If the lottery doesn't exist, show the 404 page.
   if (!lottery) {
     notFound();
   }
@@ -160,7 +110,7 @@ export default function LotteryDetailPage() {
             <div className="flex items-center gap-4 text-muted-foreground mb-6">
               <span>{UI.LOTTERY.YEAR}: {lottery.year}</span>
               <Badge variant={lottery.status === 'active' ? 'secondary' : 'destructive'}>
-                {lottery.status === 'active' ? `Идэвхтэй` : UI.LOTTERY.WINNER_DETERMINED}
+                {lottery.status === 'active' ? `Идэвхтэй` : 'Дууссан'}
               </Badge>
             </div>
             <p className="text-base text-muted-foreground leading-relaxed">
@@ -169,7 +119,7 @@ export default function LotteryDetailPage() {
           </div>
 
           {lottery.status === 'active' ? (
-            <TicketPanel lottery={lottery} user={user} />
+            <TicketPanel lottery={lottery} user={user as UserProfile | null} />
           ) : (
             <Card className="bg-muted/50">
                 <CardHeader>
