@@ -13,7 +13,6 @@ import { Lottery, UserProfile } from "@/lib/types";
 import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect } from "react";
 
 function LotteryDetailSkeleton() {
     return (
@@ -41,7 +40,7 @@ export default function LotteryDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
 
   const lotteryRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
@@ -50,21 +49,12 @@ export default function LotteryDetailPage() {
 
   const { data: lottery, isLoading: isLotteryLoading } = useDoc<Lottery>(lotteryRef);
 
-  // This is the robust check to prevent premature 404s.
-  // It only calls notFound() after it has finished loading and confirmed the document doesn't exist.
-  useEffect(() => {
-    if (
-      lotteryRef &&      // 1. An attempt to create a reference was made.
-      !isLotteryLoading && // 2. The loading process is complete.
-      !lottery             // 3. The final result is that no document was found.
-    ) {
-      notFound();
-    }
-  }, [lotteryRef, isLotteryLoading, lottery]);
-
-
-  if (isUserLoading || isLotteryLoading || !lottery) {
+  if (!lotteryRef || isLotteryLoading) {
       return <LotteryDetailSkeleton />;
+  }
+
+  if (!lottery) {
+      notFound();
   }
 
   let finalImages: ImagePlaceholder[] = [];
@@ -176,5 +166,3 @@ export default function LotteryDetailPage() {
     </div>
   );
 }
-
-    

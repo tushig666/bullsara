@@ -3,7 +3,6 @@ import { UI } from "@/lib/i18n";
 import { LotteryForm } from "../../lottery-form";
 import { notFound, useParams } from "next/navigation";
 import { Lottery } from "@/lib/types";
-import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
@@ -38,15 +37,12 @@ export default function EditLotteryPage() {
 
     const { data: lottery, isLoading } = useDoc<Lottery>(lotteryRef);
 
-    useEffect(() => {
-        if (lotteryRef && !isLoading && !lottery) {
-            notFound();
-        }
-    }, [lotteryRef, isLoading, lottery]);
-
-
-    if (isLoading || !lottery) {
+    if (!lotteryRef || isLoading) {
         return <EditLotteryPageSkeleton />;
+    }
+
+    if (!lottery) {
+        notFound();
     }
 
     return (
@@ -56,5 +52,3 @@ export default function EditLotteryPage() {
         </div>
     );
 }
-
-    
