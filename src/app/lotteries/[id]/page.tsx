@@ -21,7 +21,12 @@ function LotteryDetailSkeleton() {
             <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
                 <div className="lg:col-span-2 space-y-8">
                     <Skeleton className="w-full aspect-[4/3] rounded-xl" />
-                    <Skeleton className="h-64 w-full rounded-xl" />
+                    <div className="bg-card border rounded-xl p-6 md:p-8 space-y-4">
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-5 w-1/2" />
+                        <Skeleton className="h-5 w-1/4" />
+                        <Skeleton className="h-20 w-full" />
+                    </div>
                 </div>
                 <div className="lg:col-span-1">
                     <Skeleton className="h-96 w-full rounded-xl" />
@@ -45,11 +50,18 @@ export default function LotteryDetailPage() {
 
   const { data: lottery, isLoading: isLotteryLoading } = useDoc<Lottery>(lotteryRef);
 
+  // This is the robust check to prevent premature 404s.
+  // It only calls notFound() after it has finished loading and confirmed the document doesn't exist.
   useEffect(() => {
-    if (lotteryRef && !isLotteryLoading && !lottery) {
-        notFound();
+    if (
+      lotteryRef &&      // 1. An attempt to create a reference was made.
+      !isLotteryLoading && // 2. The loading process is complete.
+      !lottery             // 3. The final result is that no document was found.
+    ) {
+      notFound();
     }
   }, [lotteryRef, isLotteryLoading, lottery]);
+
 
   if (isUserLoading || isLotteryLoading || !lottery) {
       return <LotteryDetailSkeleton />;
@@ -83,52 +95,47 @@ export default function LotteryDetailPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
-        {/* Left side */}
         <div className="lg:col-span-2 space-y-8">
-            {/* Image Carousel */}
-            <div>
-                <Carousel className="w-full">
-                    <CarouselContent>
-                    {finalImages.length > 0 ? finalImages.map((image, index) => (
-                        <CarouselItem key={image.id + index}>
-                        <Card className="overflow-hidden rounded-xl">
-                            <CardContent className="p-0">
-                            <Image
-                                src={image.imageUrl}
-                                alt={image.description}
-                                width={800}
-                                height={600}
-                                data-ai-hint={image.imageHint}
-                                className="w-full h-auto object-cover aspect-[4/3]"
-                                priority={index === 0}
-                            />
-                            </CardContent>
-                        </Card>
-                        </CarouselItem>
-                    )) : (
-                        <CarouselItem>
-                        <Card className="overflow-hidden">
-                            <CardContent className="p-0">
-                            <Image
-                                src="https://picsum.photos/seed/placeholder/800/600"
-                                alt={`${lottery.title} - placeholder`}
-                                width={800}
-                                height={600}
-                                data-ai-hint="car"
-                                className="w-full h-auto object-cover aspect-[4/3]"
-                                priority={true}
-                            />
-                            </CardContent>
-                        </Card>
-                        </CarouselItem>
-                    )}
-                    </CarouselContent>
-                    <CarouselPrevious className="left-4" />
-                    <CarouselNext className="right-4" />
-                </Carousel>
-            </div>
+            <Carousel className="w-full">
+                <CarouselContent>
+                {finalImages.length > 0 ? finalImages.map((image, index) => (
+                    <CarouselItem key={image.id + index}>
+                    <Card className="overflow-hidden rounded-xl">
+                        <CardContent className="p-0">
+                        <Image
+                            src={image.imageUrl}
+                            alt={image.description}
+                            width={800}
+                            height={600}
+                            data-ai-hint={image.imageHint}
+                            className="w-full h-auto object-cover aspect-[4/3]"
+                            priority={index === 0}
+                        />
+                        </CardContent>
+                    </Card>
+                    </CarouselItem>
+                )) : (
+                    <CarouselItem>
+                    <Card className="overflow-hidden">
+                        <CardContent className="p-0">
+                        <Image
+                            src="https://picsum.photos/seed/placeholder/800/600"
+                            alt={`${lottery.title} - placeholder`}
+                            width={800}
+                            height={600}
+                            data-ai-hint="car"
+                            className="w-full h-auto object-cover aspect-[4/3]"
+                            priority={true}
+                        />
+                        </CardContent>
+                    </Card>
+                    </CarouselItem>
+                )}
+                </CarouselContent>
+                <CarouselPrevious className="left-4" />
+                <CarouselNext className="right-4" />
+            </Carousel>
 
-            {/* Details below image */}
             <div className="bg-card border rounded-xl p-6 md:p-8">
                 <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-primary-foreground mb-2 font-headline">
                     {lottery.carModel}
@@ -147,24 +154,27 @@ export default function LotteryDetailPage() {
             </div>
         </div>
 
-        {/* Right side */}
         <div className="lg:col-span-1">
-            {lottery.status === 'active' ? (
-                <TicketPanel lottery={lottery} user={user as UserProfile | null} />
-            ) : (
-                <Card className="bg-muted/50 sticky top-24">
-                    <CardHeader>
-                        <CardTitle className="text-muted-foreground">Сугалаа дууссан</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                            Энэхүү сугалааны үйл ажиллагаа дууссан байна.
-                        </p>
-                    </CardContent>
-                </Card>
-            )}
+            <div className="sticky top-24">
+                 {lottery.status === 'active' ? (
+                    <TicketPanel lottery={lottery} user={user as UserProfile | null} />
+                ) : (
+                    <Card className="bg-muted/50">
+                        <CardHeader>
+                            <CardTitle className="text-muted-foreground">Сугалаа дууссан</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">
+                                Энэхүү сугалааны үйл ажиллагаа дууссан байна.
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
         </div>
       </div>
     </div>
   );
 }
+
+    

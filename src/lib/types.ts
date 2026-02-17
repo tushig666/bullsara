@@ -24,7 +24,6 @@ export interface Lottery {
   pricePerTicket: number;
   totalTickets: number;
   remainingTickets: number;
-  nextTicketNumber: number;
   status: LotteryStatus;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
@@ -43,11 +42,4 @@ export interface Order {
   updatedAt?: Timestamp;
 }
 
-export interface Ticket {
-  id: string;
-  userId: string;
-  lotteryId: string;
-  ticketNumber: number;
-  orderId: string;
-  createdAt: Timestamp;
-}
+    

@@ -77,10 +77,6 @@
           "type": "number",
           "description": "The number of tickets still available for purchase."
         },
-        "nextTicketNumber": {
-          "type": "number",
-          "description": "The next sequential ticket number that will be assigned. This helps prevent overselling and track available numbers."
-        },
         "status": {
           "type": "string",
           "description": "The current status of the lottery (e.g., 'active', 'finished')."
@@ -106,7 +102,6 @@
         "pricePerTicket",
         "totalTickets",
         "remainingTickets",
-        "nextTicketNumber",
         "status",
         "createdAt"
       ]
@@ -159,47 +154,6 @@
         "quantity",
         "totalPrice",
         "status",
-        "createdAt"
-      ]
-    },
-    "Ticket": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Ticket",
-      "type": "object",
-      "description": "Represents an individual lottery ticket purchased by a user for a specific lottery.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Ticket entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User who owns this ticket. (Relationship: User 1:N Ticket)"
-        },
-        "lotteryId": {
-          "type": "string",
-          "description": "Reference to the Lottery this ticket belongs to. (Relationship: Lottery 1:N Ticket)"
-        },
-        "ticketNumber": {
-          "type": "number",
-          "description": "The unique number assigned to this ticket within its lottery."
-        },
-        "orderId": {
-          "type": "string",
-          "description": "Reference to the Order through which this ticket was purchased. (Relationship: Order 1:N Ticket)"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the ticket was generated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "lotteryId",
-        "ticketNumber",
-        "orderId",
         "createdAt"
       ]
     },
@@ -331,26 +285,6 @@
         }
       },
       {
-        "path": "/users/{userId}/tickets/{ticketId}",
-        "definition": {
-          "entityName": "Ticket",
-          "schema": {
-            "$ref": "#/backend/entities/Ticket"
-          },
-          "description": "Stores individual lottery tickets owned by specific users. Access is restricted to the owning user (`userId`) or administrators. The `userId` is present in both the path and the document, enabling direct and independent authorization checks. Includes denormalized 'userId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user who owns the ticket, matching `request.auth.uid`."
-            },
-            {
-              "name": "ticketId",
-              "description": "The unique ID of the ticket."
-            }
-          ]
-        }
-      },
-      {
         "path": "/payments/{paymentId}",
         "definition": {
           "entityName": "Payment",
@@ -367,6 +301,7 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed following the core principles of Authorization Independence, Structural Segregation, and Access Modeling to ensure security, scalability, and debuggability. \n\n**Authorization Independence (CRITICAL) and Denormalization Strategy:**\nTo eliminate `get()` calls in security rules and enable atomic operations, authorization context is denormalized:\n1.  **User-owned data (`orders`, `tickets`):** These collections are organized as subcollections under `/users/{userId}` (e.g., `/users/{userId}/orders/{orderId}`). This path-based ownership naturally includes the `userId` in the document's path. Additionally, the `userId` field is explicitly present within the `Order` and `Ticket` documents. This redundancy is intentional, allowing security rules to directly compare `request.auth.uid` with both the path wildcard `{userId}` and the `resource.data.userId` without needing to fetch a parent document.\n2.  **Payment Data (`payments`):** The `Payment` entity is conceptually tied to an `Order`, which in turn is owned by a `User`. To avoid `get()` calls to the `Order` document from the `Payment` document for authorization, the `userId` (owner of the order) MUST be denormalized and stored directly within each `payment` document. This allows payment-related rules to check `request.auth.uid == resource.data.userId` directly.\n3.  **Admin Roles (`roles_admin`):** Instead of relying on a `role` field within the `User` document (which would require a `get()` call to the user's profile for every privileged action), a separate top-level collection `/roles_admin/{userId}` is used. An admin's UID exists as a document in this collection. Security rules can then use `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))` for an atomic, non-hierarchical check, ensuring admin actions are authorization-independent.\n\n**Support for QAPs (Rules are not Filters):**\n1.  **Public Data (`lotteries`):** The `/lotteries` collection is designed for public read access. Security rules will allow `list` operations without filtering, as all documents within this collection are intended to be visible to all users (with admin-only write capabilities). The `status` field (`active`, `finished`) is within each `Lottery` document, enabling client-side filtering or server-side queries if needed, but not requiring rule-based filtering to secure the list.\n2.  **User-Specific Data (`orders`, `tickets`, `payments`):**\n    *   For `orders` and `tickets`, the hierarchical path `/users/{userId}/...` provides inherent QAP support. Users can only list documents in their specific `/users/{request.auth.uid}/orders` or `/users/{request.auth.uid}/tickets` subcollections, ensuring that `list` operations are always within their authorized scope.\n    *   For `payments`, the denormalized `userId` allows secure `list` operations using a query constraint (e.g., `db.collection('payments').where('userId', '==', auth.uid)`), which Firebase rules can validate (e.g., `allow list: if request.auth.uid != null && request.auth.uid == request.query.where.userId`). This ensures users only retrieve their own payment records.\n\n**Structural Segregation and Access Modeling:**\n*   **`/users/{userId}`:** User profiles, primarily for authentication and storing a basic `role` field, although the `roles_admin` collection is the primary source of truth for admin status for rule efficiency.\n*   **`/roles_admin/{userId}`:** Dedicated collection for admin UIDs, enabling simple `exists()` checks for admin privileges. This clearly segregates admin authorization.\n*   **`/lotteries/{lotteryId}`:** All lottery documents reside here. They have a homogeneous security posture: public read for `status: 'active'`, admin write access.\n*   **`/users/{userId}/orders/{orderId}`:** User-specific orders. Only the owner (or admin) can read/write. This path clearly segregates user-owned order data.\n*   **`/users/{userId}/tickets/{ticketId}`:** User-specific tickets. Only the owner (or admin) can read. This path clearly segregates user-owned ticket data.\n*   **`/payments/{paymentId}`:** Top-level collection for payments, but with `userId` denormalized for direct authorization checks by the owning user or admin. This segregates payment data but allows flexible querying."
+    "reasoning": "The Firestore structure is designed following the core principles of Authorization Independence, Structural Segregation, and Access Modeling to ensure security, scalability, and debuggability. \n\n**Authorization Independence (CRITICAL) and Denormalization Strategy:**\nTo eliminate `get()` calls in security rules and enable atomic operations, authorization context is denormalized:\n1.  **User-owned data (`orders`):** This collection is organized as a subcollection under `/users/{userId}` (e.g., `/users/{userId}/orders/{orderId}`). This path-based ownership naturally includes the `userId` in the document's path. Additionally, the `userId` field is explicitly present within the `Order` document. This redundancy is intentional, allowing security rules to directly compare `request.auth.uid` with both the path wildcard `{userId}` and the `resource.data.userId` without needing to fetch a parent document.\n2.  **Payment Data (`payments`):** The `Payment` entity is conceptually tied to an `Order`, which in turn is owned by a `User`. To avoid `get()` calls to the `Order` document from the `Payment` document for authorization, the `userId` (owner of the order) MUST be denormalized and stored directly within each `payment` document. This allows payment-related rules to check `request.auth.uid == resource.data.userId` directly.\n3.  **Admin Roles (`roles_admin`):** Instead of relying on a `role` field within the `User` document (which would require a `get()` call to the user's profile for every privileged action), a separate top-level collection `/roles_admin/{userId}` is used. An admin's UID exists as a document in this collection. Security rules can then use `exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))` for an atomic, non-hierarchical check, ensuring admin actions are authorization-independent.\n\n**Support for QAPs (Rules are not Filters):**\n1.  **Public Data (`lotteries`):** The `/lotteries` collection is designed for public read access. Security rules will allow `list` operations without filtering, as all documents within this collection are intended to be visible to all users (with admin-only write capabilities). The `status` field (`active`, `finished`) is within each `Lottery` document, enabling client-side filtering or server-side queries if needed, but not requiring rule-based filtering to secure the list.\n2.  **User-Specific Data (`orders`, `payments`):**\n    *   For `orders`, the hierarchical path `/users/{userId}/...` provides inherent QAP support. Users can only list documents in their specific `/users/{request.auth.uid}/orders` subcollection, ensuring that `list` operations are always within their authorized scope.\n    *   For `payments`, the denormalized `userId` allows secure `list` operations using a query constraint (e.g., `db.collection('payments').where('userId', '==', auth.uid)`), which Firebase rules can validate (e.g., `allow list: if request.auth.uid != null && request.auth.uid == request.query.where.userId`). This ensures users only retrieve their own payment records.\n\n**Structural Segregation and Access Modeling:**\n*   **`/users/{userId}`:** User profiles, primarily for authentication and storing a basic `role` field, although the `roles_admin` collection is the primary source of truth for admin status for rule efficiency.\n*   **`/roles_admin/{userId}`:** Dedicated collection for admin UIDs, enabling simple `exists()` checks for admin privileges. This clearly segregates admin authorization.\n*   **`/lotteries/{lotteryId}`:** All lottery documents reside here. They have a homogeneous security posture: public read for `status: 'active'`, admin write access.\n*   **`/users/{userId}/orders/{orderId}`:** User-specific orders. Only the owner (or admin) can read/write. This path clearly segregates user-owned order data.\n*   **`/payments/{paymentId}`:** Top-level collection for payments, but with `userId` denormalized for direct authorization checks by the owning user or admin. This segregates payment data but allows flexible querying."
   }
 }
+    

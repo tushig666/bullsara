@@ -1,12 +1,12 @@
 /**
  * Core Philosophy:
  * This ruleset implements a hybrid security model tailored for a lottery application.
- * It combines strict user-ownership for personal data (orders, tickets), role-based
+ * It combines strict user-ownership for personal data (orders), role-based
  * access control for administrative functions (managing lotteries), and public read
  * access for shared data (active lotteries).
  *
  * Data Structure:
- * User-specific data (orders, tickets) are stored in subcollections under `/users/{userId}`.
+ * User-specific data (orders) are stored in subcollections under `/users/{userId}`.
  * This path-based ownership allows for simple and secure rules. A dedicated `/roles_admin` 
  * collection serves as an efficient, non-hierarchical lookup table for identifying administrators.
  *
@@ -18,11 +18,10 @@
  *    (e.g., `/users/{userId}/orders`), rules can simply check if the requester's UID
  *    matches the `{userId}` in the path, ensuring users can only access their own data.
  * 3. Collection Group Queries: Rules are in place to allow administrators to perform
- *    collection group queries across all `orders` and `tickets` for administrative
- *    purposes (e.g., viewing all orders, drawing a lottery winner).
+ *    collection group queries across all `orders` for administrative purposes.
  * 4. Write Operations: All write operations (`create`, `update`, `delete`) are
  *    strictly controlled. Users can create their own orders, but only admins can
- *    confirm them (update status) or create tickets.
+ *    modify them.
  * 5. Listing Prohibition: Listing all users from the `/users` collection is explicitly
  *    disallowed to protect user privacy and prevent data scraping.
  */
@@ -68,14 +67,6 @@ service cloud.firestore {
         // Only admins can update an order's status (e.g., 'paid') or delete it.
         allow update, delete: if isAdmin();
       }
-
-      match /tickets/{ticketId} {
-        // Owner can read their own tickets. Admins can read any ticket.
-        allow read: if isOwner(userId) || isAdmin();
-        // Tickets are only ever created by an admin function (confirming an order).
-        // Clients cannot create, update, or delete tickets directly.
-        allow write: if isAdmin();
-      }
     }
 
     // This collection group query is used by admins to list all orders.
@@ -83,11 +74,6 @@ service cloud.firestore {
       allow list: if isAdmin();
     }
     
-    // This collection group query is used by admins to draw a winner from all tickets for a lottery.
-    match /{path=**}/tickets/{ticketId} {
-      allow list: if isAdmin();
-    }
-
     match /roles_admin/{userId} {
       // DEV-ONLY: Allow a user to make themselves an admin for development purposes.
       // In production, this should be 'if false' and managed by a trusted server process.
@@ -112,3 +98,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
