@@ -10,6 +10,7 @@ import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { Product } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdmin } from "../AdminContext";
 
 function ProductsTableSkeleton() {
     return (
@@ -38,10 +39,12 @@ function ProductsTableSkeleton() {
 
 export default function AdminProductsPage() {
     const firestore = useFirestore();
+    const { isAuthorized } = useAdmin();
+
     const productsQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !isAuthorized) return null;
         return query(collection(firestore, 'products'), orderBy('createdAt', 'desc'));
-    }, [firestore]);
+    }, [firestore, isAuthorized]);
 
     const { data: products, isLoading } = useCollection<Product>(productsQuery);
     

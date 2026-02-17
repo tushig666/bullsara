@@ -8,6 +8,7 @@ import { Order, Timestamp } from "@/lib/types";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, collectionGroup } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdmin } from '../AdminContext';
 
 function formatClientTimestamp(timestamp: Timestamp): string {
     if (timestamp && typeof timestamp.toDate === 'function') {
@@ -47,10 +48,12 @@ function OrdersTableSkeleton() {
 
 export default function AdminOrdersPage() {
     const firestore = useFirestore();
+    const { isAuthorized } = useAdmin();
+
     const ordersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !isAuthorized) return null;
         return query(collectionGroup(firestore, 'orders'), orderBy('createdAt', 'desc'));
-    }, [firestore]);
+    }, [firestore, isAuthorized]);
 
     const { data: orders, isLoading } = useCollection<Order>(ordersQuery);
     
