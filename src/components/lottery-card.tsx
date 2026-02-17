@@ -65,7 +65,7 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
             <div className="mt-6 pt-4 border-t border-border/40">
               <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Нэгж үнэ</span>
-                  <span className="text-lg font-bold text-primary-foreground">{lottery.pricePerTicket.toLocaleString()} ₮</span>
+                  <span className="text-lg font-bold text-foreground">{lottery.pricePerTicket.toLocaleString()} ₮</span>
               </div>
             </div>
           </div>
