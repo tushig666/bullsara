@@ -2,10 +2,11 @@
 import { UI } from "@/lib/i18n";
 import { LotteryForm } from "../../lottery-form";
 import { notFound, useParams } from "next/navigation";
-import { adminDb } from "@/lib/firebase/admin";
 import { Lottery } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 function EditLotteryPageSkeleton() {
   return (
@@ -25,47 +26,33 @@ function EditLotteryPageSkeleton() {
   );
 }
 
-// This page now fetches data on the server and passes it to the client component.
-// To achieve this, we can't use this as a server component directly because it uses client hooks for skeleton
-// A better approach is to create a wrapper. But for now, we will use a client component with server-like fetching.
-// This is a temporary solution to avoid a full refactor of the skeleton logic.
+export default function EditLotteryPage() {
+    const params = useParams();
+    const id = params.id as string;
+    const firestore = useFirestore();
 
-async function getLottery(id: string): Promise<Lottery | null> {
-    const lotterySnap = await adminDb.collection('lotteries').doc(id).get();
-    if (!lotterySnap.exists) {
-        return null;
-    }
-    return { id: lotterySnap.id, ...lotterySnap.data() } as Lottery;
-}
+    const lotteryRef = useMemoFirebase(() => {
+        if (!firestore || !id) return null;
+        return doc(firestore, 'lotteries', id);
+    }, [firestore, id]);
 
-
-export default function EditLotteryPage({ params }: { params: { id: string } }) {
-    const { id } = params;
-    const [lottery, setLottery] = useState<Lottery | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: lottery, isLoading } = useDoc<Lottery>(lotteryRef);
 
     useEffect(() => {
-        const fetchLottery = async () => {
-            const lotteryData = await getLottery(id);
-            if (!lotteryData) {
-                notFound();
-            } else {
-                setLottery(lotteryData);
-            }
-            setIsLoading(false);
-        };
+        if (!isLoading && !lottery && id) {
+            notFound();
+        }
+    }, [isLoading, lottery, id]);
 
-        fetchLottery();
-    }, [id]);
 
-    if (isLoading) {
+    if (isLoading || !lottery) {
         return <EditLotteryPageSkeleton />;
     }
 
     return (
         <div>
             <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.EDIT_LOTTERY}</h1>
-            {lottery && <LotteryForm lottery={lottery} />}
+            <LotteryForm lottery={lottery} />
         </div>
     );
 }

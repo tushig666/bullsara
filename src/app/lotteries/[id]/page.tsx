@@ -1,35 +1,78 @@
-import { notFound } from "next/navigation";
+'use client';
+
+import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UI } from "@/lib/i18n";
 import { Badge } from "@/components/ui/badge";
 import { TicketPanel } from "./ticket-panel";
 import { PlaceHolderImages, ImagePlaceholder } from "@/lib/placeholder-images";
 import { Lottery, UserProfile } from "@/lib/types";
-import { adminDb } from "@/lib/firebase/admin";
-import { getCurrentUser } from "@/lib/auth";
+import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
 
-async function getLottery(id: string): Promise<Lottery | null> {
-  const lotterySnap = await adminDb.collection('lotteries').doc(id).get();
-  if (!lotterySnap.exists) {
-    return null;
-  }
-  return { id: lotterySnap.id, ...lotterySnap.data() } as Lottery;
+function LotteryDetailSkeleton() {
+    return (
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div className="grid lg:grid-cols-2 gap-12 items-start">
+                <div>
+                    <Skeleton className="w-full aspect-[4/3] rounded-xl" />
+                </div>
+                <div className="space-y-8">
+                    <div>
+                        <Skeleton className="h-12 w-3/4 mb-2" />
+                        <Skeleton className="h-6 w-1/2 mb-4" />
+                        <div className="flex items-center gap-4 mb-6">
+                            <Skeleton className="h-5 w-24" />
+                            <Skeleton className="h-6 w-20 rounded-full" />
+                        </div>
+                        <div className="space-y-2">
+                           <Skeleton className="h-4 w-full" />
+                           <Skeleton className="h-4 w-full" />
+                           <Skeleton className="h-4 w-5/6" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-64 w-full rounded-lg" />
+                </div>
+            </div>
+        </div>
+    );
 }
 
-export default async function LotteryDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
 
-  // Fetch lottery data and user data in parallel on the server.
-  const [lottery, user] = await Promise.all([
-    getLottery(id),
-    getCurrentUser()
-  ]);
+export default function LotteryDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
 
-  // If the lottery doesn't exist, show the 404 page.
-  if (!lottery) {
-    notFound();
+  const lotteryRef = useMemoFirebase(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'lotteries', id);
+  }, [firestore, id]);
+
+  const { data: lottery, isLoading: isLotteryLoading, error } = useDoc<Lottery>(lotteryRef);
+
+  useEffect(() => {
+    if (!isLotteryLoading && !lottery && id) {
+        // If loading is finished, we have an id, but no lottery, it's a 404
+        notFound();
+    }
+  }, [isLotteryLoading, lottery, id]);
+
+
+  if (isLotteryLoading || isUserLoading || !lottery) {
+      return <LotteryDetailSkeleton />;
+  }
+
+  if (error) {
+    // This should be handled by the FirebaseErrorListener
+    console.error(error);
+    // Potentially render a user-friendly error message
+    return <p className="text-center py-16 text-destructive">Сугалааг ачаалахад алдаа гарлаа.</p>;
   }
   
   let finalImages: ImagePlaceholder[] = [];

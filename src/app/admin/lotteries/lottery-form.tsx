@@ -73,8 +73,6 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
                 remainingTickets: values.totalTickets,
                 nextTicketNumber: 1,
                 status: 'active',
-                winnerTicketId: null,
-                winnerUserId: null,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
