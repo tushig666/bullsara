@@ -56,7 +56,7 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
           <div className="p-6">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-xl font-bold text-primary-foreground mb-1 font-headline">{lottery.title}</h3>
+                <h3 className="text-xl font-bold text-foreground mb-1 font-headline">{lottery.title}</h3>
                 <p className="text-sm text-muted-foreground">{lottery.carModel} - {lottery.year}</p>
               </div>
               <Badge variant="secondary">{`${UI.LOTTERY.REMAINING_TICKETS}: ${lottery.remainingTickets}`}</Badge>
