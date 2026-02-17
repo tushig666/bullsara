@@ -2,47 +2,38 @@
 
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { notFound } from 'next/navigation';
-import { UserProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { UI } from '@/lib/i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useState, useEffect } from 'react';
 
 export function AdminGate({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    const userProfileRef = useMemoFirebase(() => {
+    // The reference now points to the roles_admin collection to match security rules
+    const adminRoleRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
+        return doc(firestore, 'roles_admin', user.uid);
     }, [firestore, user]);
 
-    const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+    // We only care about the existence of the document, not its content.
+    // useDoc's `data` will be non-null if the doc exists, confirming admin status.
+    const { data: adminRoleDoc, isLoading: isAdminRoleLoading } = useDoc(adminRoleRef);
     
-    const [isAuthorized, setIsAuthorized] = useState(false);
-    const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
-    
-    const isLoading = isUserLoading || isProfileLoading;
+    // Combined loading state
+    const isLoading = isUserLoading || isAdminRoleLoading;
 
-    useEffect(() => {
-        if (!isLoading) {
-            if (user && userProfile && userProfile.role === 'admin') {
-                setIsAuthorized(true);
-            } else {
-                setIsAuthorized(false);
-            }
-            setIsAuthCheckComplete(true);
-        }
-    }, [isLoading, user, userProfile]);
-
-    if (!isAuthCheckComplete) {
+    if (isLoading) {
         return (
             <div className="flex min-h-[50vh] items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         );
     }
+
+    // After loading, check for authorization.
+    // A non-null user and a non-null adminRoleDoc means the document exists, so the user is an admin.
+    const isAuthorized = !!user && !!adminRoleDoc;
 
     if (!isAuthorized) {
         return (
@@ -61,5 +52,6 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
         )
     }
 
+    // If authorized, render the admin content.
     return <>{children}</>;
 }
