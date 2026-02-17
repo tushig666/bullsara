@@ -17,26 +17,14 @@ import { useEffect } from "react";
 
 function LotteryDetailSkeleton() {
     return (
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="grid lg:grid-cols-2 gap-12 items-start">
-                <div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+                <div className="lg:col-span-2 space-y-8">
                     <Skeleton className="w-full aspect-[4/3] rounded-xl" />
+                    <Skeleton className="h-64 w-full rounded-xl" />
                 </div>
-                <div className="space-y-8">
-                    <div>
-                        <Skeleton className="h-12 w-3/4 mb-2" />
-                        <Skeleton className="h-6 w-1/2 mb-4" />
-                        <div className="flex items-center gap-4 mb-6">
-                            <Skeleton className="h-5 w-24" />
-                            <Skeleton className="h-6 w-20 rounded-full" />
-                        </div>
-                        <div className="space-y-2">
-                           <Skeleton className="h-4 w-full" />
-                           <Skeleton className="h-4 w-full" />
-                           <Skeleton className="h-4 w-5/6" />
-                        </div>
-                    </div>
-                    <Skeleton className="h-64 w-full rounded-lg" />
+                <div className="lg:col-span-1">
+                    <Skeleton className="h-96 w-full rounded-xl" />
                 </div>
             </div>
         </div>
@@ -58,20 +46,12 @@ export default function LotteryDetailPage() {
   const { data: lottery, isLoading: isLotteryLoading } = useDoc<Lottery>(lotteryRef);
 
   useEffect(() => {
-    // This effect handles the case where the document doesn't exist.
-    // It will only call notFound() if:
-    // 1. We have tried to create a document reference (lotteryRef is not null).
-    // 2. The loading process for that document has finished (!isLotteryLoading).
-    // 3. The document was not found (lottery is null).
     if (lotteryRef && !isLotteryLoading && !lottery) {
         notFound();
     }
   }, [lotteryRef, isLotteryLoading, lottery]);
 
-
-  // Show skeleton while any data is loading, or if we haven't determined
-  // if the lottery exists yet. The useEffect above will handle the 404 case.
-  if (isLotteryLoading || isUserLoading || !lottery) {
+  if (isUserLoading || isLotteryLoading || !lottery) {
       return <LotteryDetailSkeleton />;
   }
 
@@ -101,80 +81,88 @@ export default function LotteryDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="grid lg:grid-cols-2 gap-12 items-start">
-        <div>
-          <Carousel className="w-full">
-            <CarouselContent>
-              {finalImages.length > 0 ? finalImages.map((image, index) => (
-                <CarouselItem key={image.id + index}>
-                  <Card className="overflow-hidden rounded-xl">
-                    <CardContent className="p-0">
-                      <Image
-                        src={image.imageUrl}
-                        alt={image.description}
-                        width={800}
-                        height={600}
-                        data-ai-hint={image.imageHint}
-                        className="w-full h-auto object-cover aspect-[4/3]"
-                        priority={index === 0}
-                      />
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              )) : (
-                 <CarouselItem>
-                  <Card className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <Image
-                        src="https://picsum.photos/seed/placeholder/800/600"
-                        alt={`${lottery.title} - placeholder`}
-                        width={800}
-                        height={600}
-                        data-ai-hint="car"
-                        className="w-full h-auto object-cover aspect-[4/3]"
-                        priority={true}
-                      />
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              )}
-            </CarouselContent>
-            <CarouselPrevious className="left-4" />
-            <CarouselNext className="right-4" />
-          </Carousel>
-        </div>
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-primary-foreground mb-2 font-headline">
-              {lottery.carModel}
-            </h1>
-             <p className="text-xl text-muted-foreground mb-4">{lottery.title}</p>
-            <div className="flex items-center gap-4 text-muted-foreground mb-6">
-              <span>{UI.LOTTERY.YEAR}: {lottery.year}</span>
-              <Badge variant={lottery.status === 'active' ? 'secondary' : 'destructive'}>
-                {lottery.status === 'active' ? `Идэвхтэй` : 'Дууссан'}
-              </Badge>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
+        {/* Left side */}
+        <div className="lg:col-span-2 space-y-8">
+            {/* Image Carousel */}
+            <div>
+                <Carousel className="w-full">
+                    <CarouselContent>
+                    {finalImages.length > 0 ? finalImages.map((image, index) => (
+                        <CarouselItem key={image.id + index}>
+                        <Card className="overflow-hidden rounded-xl">
+                            <CardContent className="p-0">
+                            <Image
+                                src={image.imageUrl}
+                                alt={image.description}
+                                width={800}
+                                height={600}
+                                data-ai-hint={image.imageHint}
+                                className="w-full h-auto object-cover aspect-[4/3]"
+                                priority={index === 0}
+                            />
+                            </CardContent>
+                        </Card>
+                        </CarouselItem>
+                    )) : (
+                        <CarouselItem>
+                        <Card className="overflow-hidden">
+                            <CardContent className="p-0">
+                            <Image
+                                src="https://picsum.photos/seed/placeholder/800/600"
+                                alt={`${lottery.title} - placeholder`}
+                                width={800}
+                                height={600}
+                                data-ai-hint="car"
+                                className="w-full h-auto object-cover aspect-[4/3]"
+                                priority={true}
+                            />
+                            </CardContent>
+                        </Card>
+                        </CarouselItem>
+                    )}
+                    </CarouselContent>
+                    <CarouselPrevious className="left-4" />
+                    <CarouselNext className="right-4" />
+                </Carousel>
             </div>
-            <p className="text-base text-muted-foreground leading-relaxed">
-              {lottery.description}
-            </p>
-          </div>
 
-          {lottery.status === 'active' ? (
-            <TicketPanel lottery={lottery} user={user as UserProfile | null} />
-          ) : (
-            <Card className="bg-muted/50">
-                <CardHeader>
-                    <CardTitle className="text-muted-foreground">Сугалаа дууссан</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">
-                        Энэхүү сугалааны үйл ажиллагаа дууссан байна.
-                    </p>
-                </CardContent>
-            </Card>
-          )}
+            {/* Details below image */}
+            <div className="bg-card border rounded-xl p-6 md:p-8">
+                <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-primary-foreground mb-2 font-headline">
+                    {lottery.carModel}
+                </h1>
+                <p className="text-lg text-muted-foreground mb-4">{lottery.title}</p>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground mb-6 border-b pb-4">
+                    <span>{UI.LOTTERY.YEAR}: <span className="font-semibold text-foreground">{lottery.year}</span></span>
+                    <Badge variant={lottery.status === 'active' ? 'secondary' : 'destructive'}>
+                        {lottery.status === 'active' ? `Идэвхтэй` : 'Дууссан'}
+                    </Badge>
+                </div>
+                <h2 className="text-xl font-bold text-foreground mb-4">{UI.LOTTERY.DESCRIPTION}</h2>
+                <div className="text-muted-foreground leading-relaxed">
+                    <p>{lottery.description}</p>
+                </div>
+            </div>
+        </div>
+
+        {/* Right side */}
+        <div className="lg:col-span-1">
+            {lottery.status === 'active' ? (
+                <TicketPanel lottery={lottery} user={user as UserProfile | null} />
+            ) : (
+                <Card className="bg-muted/50 sticky top-24">
+                    <CardHeader>
+                        <CardTitle className="text-muted-foreground">Сугалаа дууссан</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">
+                            Энэхүү сугалааны үйл ажиллагаа дууссан байна.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
         </div>
       </div>
     </div>
