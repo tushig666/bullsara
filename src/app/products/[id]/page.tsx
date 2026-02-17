@@ -128,7 +128,7 @@ export default function ProductDetailPage() {
             </Carousel>
 
             <div className="bg-card border rounded-xl p-6 md:p-8">
-                <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-primary-foreground mb-2 font-headline">
+                <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground mb-2 font-headline">
                     {product.carModel}
                 </h1>
                 <p className="text-lg text-muted-foreground mb-4">{product.title}</p>
