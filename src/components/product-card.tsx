@@ -39,31 +39,31 @@ export function ProductCard({ product, index }: ProductCardProps) {
     }
 
   return (
-    <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1">
-      <Link href={`/products/${product.id}`} className="block group">
-        <div className="bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-accent/20 flex flex-col md:flex-row">
-          <div className="md:w-1/3 overflow-hidden">
+    <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1 h-full">
+      <Link href={`/products/${product.id}`} className="block group h-full">
+        <div className="bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-accent/20 flex flex-col h-full">
+          <div className="overflow-hidden">
             <Image
               src={imageUrl}
               alt={product.title}
               width={800}
-              height={600}
+              height={450}
               data-ai-hint={imageHint}
-              className="w-full h-full object-cover aspect-video md:aspect-auto transition-transform duration-500 ease-in-out group-hover:scale-105"
+              className="w-full h-auto object-cover aspect-video transition-transform duration-500 ease-in-out group-hover:scale-105"
             />
           </div>
           <div className="p-6 flex flex-col flex-1">
             <div className='flex-grow'>
                 <h3 className="text-xl font-bold text-foreground mb-1 font-headline">{product.title}</h3>
                 <p className="text-sm text-muted-foreground">{product.carModel} - {product.year}</p>
-                <p className="text-sm text-muted-foreground mt-4 line-clamp-2 md:line-clamp-4">{product.description}</p>
+                <p className="text-sm text-muted-foreground mt-4 line-clamp-3">{product.description}</p>
             </div>
             <div className="mt-6 pt-4 border-t border-border/40">
               <div className="flex justify-between items-center mb-4">
                   <span className="text-muted-foreground">{UI.PRODUCT.PRICE}</span>
                   <span className="text-lg font-bold text-foreground">{product.price.toLocaleString()} ₮</span>
               </div>
-                <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary hover:bg-primary/90 h-10 px-4 py-2 w-full text-black font-bold">
+                <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary hover:bg-primary/90 h-10 px-4 py-2 w-full font-bold text-primary-foreground">
                     {UI.PRODUCT.DETAILS}
                 </div>
             </div>
