@@ -6,6 +6,7 @@ import { Lottery } from '@/lib/types';
 import { UI } from '@/lib/i18n';
 import { Badge } from './ui/badge';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Button } from './ui/button';
 
 interface LotteryCardProps {
   lottery: Lottery;
@@ -67,6 +68,11 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
                   <span className="text-muted-foreground">Нэгж үнэ</span>
                   <span className="text-lg font-bold text-foreground">{lottery.pricePerTicket.toLocaleString()} ₮</span>
               </div>
+            </div>
+             <div className="mt-4">
+                <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full">
+                    Дэлгэрэнгүйг үзэх
+                </div>
             </div>
           </div>
         </div>
