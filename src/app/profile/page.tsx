@@ -91,9 +91,9 @@ function ProfileCustomizer({ userProfile }: { userProfile: UserProfile }) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="flex items-center gap-6">
                 <Avatar className="h-20 w-20">
-                    <AvatarImage src={form.watch('photoURL') || userProfile.photoURL || undefined} alt={userProfile.displayName} />
+                    <AvatarImage src={form.watch('photoURL') || userProfile.photoURL || undefined} alt={userProfile.displayName || ''} />
                     <AvatarFallback className="text-2xl">
-                        {(userProfile.displayName || userProfile.email).charAt(0).toUpperCase()}
+                        {(userProfile.displayName || userProfile.email || '').charAt(0).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex-grow">
