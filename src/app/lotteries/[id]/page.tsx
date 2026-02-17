@@ -12,7 +12,6 @@ import { Lottery } from "@/lib/types";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { useEffect, useState } from "react";
 
 function LotteryDetailSkeleton() {
   return (
@@ -72,29 +71,20 @@ export default function LotteryDetailPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const [isReady, setIsReady] = useState(false);
-  useEffect(() => {
-    // This effect ensures we only proceed when `id` and `firestore` are available.
-    if (id && firestore) {
-        setIsReady(true);
-    }
-  }, [id, firestore]);
-
-
   const lotteryDocRef = useMemoFirebase(() => {
-    if (!isReady) return null;
+    if (!id || !firestore) return null;
     return doc(firestore, 'lotteries', id);
-  }, [isReady, firestore, id]);
+  }, [id, firestore]);
 
   const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
 
-  const isLoading = !isReady || isDocLoading;
+  // We are loading if the query reference hasn't been created yet OR if the document is actively being fetched.
+  const isLoading = !lotteryDocRef || isDocLoading;
 
   if (isLoading) {
     return <LotteryDetailSkeleton />;
   }
 
-  // After loading, we can check for errors.
   if (error) {
     console.error("Error fetching lottery details:", error);
     return (
@@ -113,8 +103,7 @@ export default function LotteryDetailPage() {
     );
   }
 
-  // If loading is finished and there's no error, but the data is null,
-  // it means the document was not found. This is a definitive 404.
+  // If loading is finished and we have no data, then the document doesn't exist.
   if (!lottery) {
     notFound();
   }

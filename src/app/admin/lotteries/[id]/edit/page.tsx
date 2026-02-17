@@ -7,7 +7,6 @@ import { notFound, useParams } from "next/navigation";
 import { LotteryForm } from "../../lottery-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useEffect, useState } from "react";
 
 function EditLotteryPageSkeleton() {
   return (
@@ -32,31 +31,20 @@ export default function EditLotteryPage() {
     const id = Array.isArray(params.id) ? params.id[0] : params.id;
     const firestore = useFirestore();
 
-    const [isReady, setIsReady] = useState(false);
-    useEffect(() => {
-        // This effect ensures we only proceed when `id` and `firestore` are available.
-        if (id && firestore) {
-            setIsReady(true);
-        }
-    }, [id, firestore]);
-
     const lotteryDocRef = useMemoFirebase(() => {
-        // The memoization now correctly waits for the readiness signal.
-        if (!isReady) return null;
+        if (!id || !firestore) return null;
         return doc(firestore, 'lotteries', id);
-    }, [isReady, firestore, id]);
+    }, [id, firestore]);
 
     const { data: lottery, isLoading: isDocLoading, error } = useDoc<Lottery>(lotteryDocRef);
     
-    // The main loading condition:
-    // We are loading if we are not "ready" (missing id/firestore) or if the document is actively being fetched.
-    const isLoading = !isReady || isDocLoading;
+    // We are loading if the query reference hasn't been created yet OR if the document is actively being fetched.
+    const isLoading = !lotteryDocRef || isDocLoading;
 
     if (isLoading) {
         return <EditLotteryPageSkeleton />;
     }
 
-    // After loading is completely finished, we can check for errors.
     if (error) {
         console.error("Error fetching lottery:", error);
         return (
@@ -75,17 +63,14 @@ export default function EditLotteryPage() {
         );
     }
     
-    // If loading is finished and there's no error, but the data is null,
-    // it means the document was not found for the given ID. This is a definitive 404.
+    // If loading is finished and we have no data, then the document doesn't exist.
     if (!lottery) {
         notFound();
     }
 
-    // If all checks pass, render the form with the data.
     return (
         <div>
             <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.EDIT_LOTTERY}</h1>
-            {/* Pass the validated lottery data to the form */}
             <LotteryForm lottery={lottery} />
         </div>
     );
