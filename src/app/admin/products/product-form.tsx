@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -21,7 +21,11 @@ const formSchema = z.object({
   carModel: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
   year: z.coerce.number().min(1900, { message: 'Зөв он оруулна уу' }),
   description: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
-  images: z.string().url({ message: "Хүчинтэй URL хаяг оруулна уу." }).or(z.literal('')),
+  images: z.string().refine((value) => {
+    if (!value.trim()) return true; // Allow empty or whitespace-only string
+    const urls = value.split('\n').filter(url => url.trim() !== '');
+    return urls.every(url => z.string().url().safeParse(url.trim()).success);
+  }, { message: "URL тус бүр хүчинтэй байх ёстой бөгөөд мөр тус бүрд нэг байна." }),
   price: z.coerce.number().min(0, { message: 'Үнэ 0-ээс бага байж болохгүй' }),
   stock: z.coerce.number().min(0, { message: 'Тоо 0-ээс бага байж болохгүй' }),
 });
@@ -44,7 +48,7 @@ export function ProductForm({ product }: ProductFormProps) {
       carModel: product?.carModel || '',
       year: product?.year || new Date().getFullYear(),
       description: product?.description || '',
-      images: product?.images?.[0] || '',
+      images: product?.images?.join('\n') || '',
       price: product?.price || 50000,
       stock: product?.stock || 100,
     },
@@ -57,7 +61,7 @@ export function ProductForm({ product }: ProductFormProps) {
     try {
         const dataPayload = {
             ...values,
-            images: values.images ? [values.images] : [],
+            images: values.images.split('\n').map(url => url.trim()).filter(url => url),
         };
 
         if (isEditMode && product) {
@@ -68,12 +72,14 @@ export function ProductForm({ product }: ProductFormProps) {
             }, { merge: true });
         } else {
             const productsCollection = collection(firestore, 'products');
-            await addDoc(productsCollection, {
+            const newDocRef = await addDoc(productsCollection, {
                 ...dataPayload,
                 status: 'active',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
+            // When adding a new document, we need to manually set the ID
+            await setDoc(newDocRef, { id: newDocRef.id }, { merge: true });
         }
 
         toast({
@@ -130,8 +136,15 @@ export function ProductForm({ product }: ProductFormProps) {
             <FormItem>
               <FormLabel>{UI.ADMIN.IMAGES}</FormLabel>
               <FormControl>
-                <Input placeholder="https://example.com/image.png" {...field} />
+                <Textarea
+                  placeholder="https://example.com/image1.png&#10;https://example.com/image2.png"
+                  rows={5}
+                  {...field}
+                />
               </FormControl>
+              <FormDescription>
+                Зураг тус бүрийн URL-г шинэ мөрөн дээр оруулна уу.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
