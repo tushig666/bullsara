@@ -81,7 +81,7 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow get: if isAdmin();
+      allow get: if true;
       allow list: if true;
       allow create: if isAdmin();
       allow update: if isAdmin();
