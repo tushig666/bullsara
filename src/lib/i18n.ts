@@ -21,7 +21,7 @@ export const UI = {
     ACTIVE_PRODUCTS: 'Онцлох бүтээгдэхүүн',
   },
   PRODUCT: {
-    PARTICIPATE: 'Худалдан авах',
+    PARTICIPATE: 'Сугалаанд оролцох',
     PRICE: 'Үнэ',
     TOTAL_PRICE: 'Нийт үнэ',
     BUY: 'Худалдаж авах',
@@ -29,8 +29,8 @@ export const UI = {
     DESCRIPTION: 'Дэлгэрэнгүй',
     QUANTITY: 'Тоо ширхэг',
     NO_STOCK: 'Бүтээгдэхүүн дууссан',
-    ORDER: 'Захиалах',
-    STOCK: 'Үлдэгдэл',
+    ORDER: 'Сугалаа авах',
+    STOCK: 'Боломжит сугалааны тоо',
     DETAILS: 'Дэлгэрэнгүйг үзэх'
   },
   PAYMENT: {
