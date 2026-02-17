@@ -9,13 +9,15 @@ import { collection, query, where } from 'firebase/firestore';
 
 function ProductGridSkeleton() {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 gap-8">
             {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex flex-col space-y-3">
-                    <Skeleton className="h-[250px] w-full rounded-xl" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-2/3" />
+                <div key={i} className="flex flex-col md:flex-row space-x-0 md:space-x-6 border rounded-xl overflow-hidden">
+                    <Skeleton className="h-56 w-full md:w-1/3" />
+                    <div className="space-y-4 flex-1 p-6 md:p-0 md:py-6">
+                        <Skeleton className="h-6 w-2/3" />
                         <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-20 w-full" />
+                        <Skeleton className="h-10 w-full mt-4" />
                     </div>
                 </div>
             ))}
@@ -47,7 +49,7 @@ function ProductList() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+    <div className="grid grid-cols-1 gap-8">
       {products.map((product, index) => (
         <ProductCard key={product.id} product={product} index={index} />
       ))}
