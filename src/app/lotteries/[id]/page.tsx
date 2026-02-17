@@ -11,7 +11,6 @@ import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { Lottery } from "@/lib/types";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
 
 function LotteryDetailSkeleton() {
   return (
@@ -38,31 +37,6 @@ function LotteryDetailSkeleton() {
       </div>
     </div>
   );
-}
-
-function WinnerInfoCard({ lottery }: { lottery: Lottery }) {
-    if (lottery.status !== 'finished' || (!lottery.winnerTicket && !lottery.winnerUserId)) {
-        return null;
-    }
-
-    return (
-        <Card className="bg-green-500/10 border-green-500/50">
-            <CardHeader>
-                <CardTitle className="text-green-400 font-headline">🎉 {UI.LOTTERY.WINNER_ANNOUNCEMENT} 🎉</CardTitle>
-                <CardDescription className="text-green-400/80">
-                   {UI.LOTTERY.WINNER_DETERMINED} on {lottery.updatedAt ? format(lottery.updatedAt.toDate(), 'yyyy-MM-dd') : ''}
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-                {lottery.winnerTicket && (
-                    <p className="text-muted-foreground">{UI.LOTTERY.WINNING_TICKET}: <span className="font-bold text-lg text-primary-foreground">#{lottery.winnerTicket}</span></p>
-                )}
-                {lottery.winnerUserId && (
-                    <p className="text-muted-foreground">Ялагч хэрэглэгч: <span className="font-mono text-xs text-primary-foreground">{lottery.winnerUserId}</span></p>
-                )}
-            </CardContent>
-        </Card>
-    );
 }
 
 export default function LotteryDetailPage() {
@@ -194,10 +168,19 @@ export default function LotteryDetailPage() {
             </p>
           </div>
 
-          {lottery.status === 'finished' ? (
-            <WinnerInfoCard lottery={lottery} />
-          ) : (
+          {lottery.status === 'active' ? (
             <TicketPanel lottery={lottery} user={user} />
+          ) : (
+            <Card className="bg-muted/50">
+                <CardHeader>
+                    <CardTitle className="text-muted-foreground">Сугалаа дууссан</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">
+                        Энэхүү сугалааны үйл ажиллагаа дууссан байна.
+                    </p>
+                </CardContent>
+            </Card>
           )}
         </div>
       </div>

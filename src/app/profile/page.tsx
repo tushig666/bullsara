@@ -220,13 +220,6 @@ export default function ProfilePage() {
                         <Badge key={num} variant="secondary">{num}</Badge>
                     ))}
                   </div>
-                   {group.lottery.winnerTicket && (
-                    <div className="mt-4 pt-4 border-t">
-                        <p className="font-semibold">{UI.LOTTERY.WINNER_ANNOUNCEMENT}:</p>
-                        <p>{UI.LOTTERY.WINNING_TICKET}: <Badge variant="default">{group.lottery.winnerTicket}</Badge></p>
-                        {group.ticketNumbers.includes(group.lottery.winnerTicket) && <p className="text-green-400 font-bold mt-2">🎉 Та азтан боллоо! 🎉</p>}
-                    </div>
-                   )}
                 </CardContent>
               </Card>
             )

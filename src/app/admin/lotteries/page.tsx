@@ -11,13 +11,6 @@ import { Lottery } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function WinnerInfo({ lottery }: { lottery: Lottery }) {
-    if (lottery.status !== 'finished' || !lottery.winnerTicket) {
-        return <>-</>;
-    }
-    return <>#{lottery.winnerTicket}</>;
-}
-
 function LotteriesTableSkeleton() {
     return (
         <Table>
@@ -26,7 +19,6 @@ function LotteriesTableSkeleton() {
                     <TableHead>{UI.ADMIN.TITLE}</TableHead>
                     <TableHead>Статус</TableHead>
                     <TableHead>{UI.LOTTERY.REMAINING_TICKETS}</TableHead>
-                    <TableHead>{UI.LOTTERY.WINNER_ANNOUNCEMENT}</TableHead>
                     <TableHead className="text-right">Үйлдэл</TableHead>
                 </TableRow>
             </TableHeader>
@@ -36,7 +28,6 @@ function LotteriesTableSkeleton() {
                         <TableCell><Skeleton className="h-5 w-32" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-5 w-10" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                     </TableRow>
                 ))}
@@ -71,7 +62,6 @@ export default function AdminLotteriesPage() {
                                 <TableHead>{UI.ADMIN.TITLE}</TableHead>
                                 <TableHead>Статус</TableHead>
                                 <TableHead>{UI.LOTTERY.REMAINING_TICKETS}</TableHead>
-                                <TableHead>{UI.LOTTERY.WINNER_ANNOUNCEMENT}</TableHead>
                                 <TableHead className="text-right">Үйлдэл</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -85,9 +75,6 @@ export default function AdminLotteriesPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>{lottery.remainingTickets} / {lottery.totalTickets}</TableCell>
-                                    <TableCell>
-                                        <WinnerInfo lottery={lottery} />
-                                    </TableCell>
                                     <TableCell className="text-right">
                                         <AdminLotteryActions lottery={lottery} />
                                     </TableCell>

@@ -26,10 +26,6 @@ export interface Lottery {
   remainingTickets: number;
   nextTicketNumber: number;
   status: LotteryStatus;
-  winnerTicket?: number | null;
-  winnerUser?: string | null;
-  winnerTicketId?: string | null;
-  winnerUserId?: string | null;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }
