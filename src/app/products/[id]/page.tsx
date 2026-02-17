@@ -3,18 +3,17 @@
 import { notFound, useParams } from "next/navigation";
 import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UI } from "@/lib/i18n";
-import { Badge } from "@/components/ui/badge";
-import { TicketPanel } from "./ticket-panel";
+import { PurchasePanel } from "./purchase-panel";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import type { ImagePlaceholder } from "@/lib/placeholder-images";
-import { Lottery, UserProfile } from "@/lib/types";
+import { Product, UserProfile } from "@/lib/types";
 import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 
-function LotteryDetailSkeleton() {
+function ProductDetailSkeleton() {
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
@@ -36,47 +35,49 @@ function LotteryDetailSkeleton() {
 }
 
 
-export default function LotteryDetailPage() {
+export default function ProductDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const lotteryRef = useMemoFirebase(() => {
+  const productRef = useMemoFirebase(() => {
     if (!firestore || !id) return null;
-    return doc(firestore, 'lotteries', id);
+    return doc(firestore, 'products', id);
   }, [firestore, id]);
 
-  const { data: lottery, isLoading: isLotteryLoading } = useDoc<Lottery>(lotteryRef);
+  const { data: product, isLoading } = useDoc<Product>(productRef);
 
-  if (!lotteryRef || isLotteryLoading) {
-      return <LotteryDetailSkeleton />;
+  if (isLoading) {
+      return <ProductDetailSkeleton />;
   }
 
-  if (!lottery) {
+  // Only call notFound() after loading is complete and if product is still null.
+  // This prevents premature 404 errors.
+  if (!product) {
       notFound();
   }
 
   let finalImages: ImagePlaceholder[] = [];
   
-  if (lottery.images && lottery.images.length > 0 && lottery.images[0]) {
-    const firstImage = lottery.images[0];
+  if (product.images && product.images.length > 0 && product.images[0]) {
+    const firstImage = product.images[0];
     if (firstImage.startsWith('http') || firstImage.startsWith('https')) {
-        finalImages = lottery.images.map((url, i) => ({
+        finalImages = product.images.map((url, i) => ({
             id: `url-${i}`,
             imageUrl: url,
-            imageHint: lottery.carModel,
-            description: `${lottery.title} - view ${i + 1}`,
+            imageHint: product.carModel,
+            description: `${product.title} - view ${i + 1}`,
         }));
     } else {
-        finalImages = lottery.images
+        finalImages = product.images
           .map(id => PlaceHolderImages.find(img => img.id === id))
           .filter((img): img is ImagePlaceholder => !!img);
     }
   }
   
   if (finalImages.length === 0) {
-    const lowerCaseCarModel = lottery.carModel.toLowerCase();
+    const lowerCaseCarModel = product.carModel.toLowerCase();
     finalImages = PlaceHolderImages.filter(img => 
         img.imageHint.toLowerCase().includes(lowerCaseCarModel)
     );
@@ -110,7 +111,7 @@ export default function LotteryDetailPage() {
                         <CardContent className="p-0">
                         <Image
                             src="https://picsum.photos/seed/placeholder/800/600"
-                            alt={`${lottery.title} - placeholder`}
+                            alt={`${product.title} - placeholder`}
                             width={800}
                             height={600}
                             data-ai-hint="car"
@@ -128,38 +129,22 @@ export default function LotteryDetailPage() {
 
             <div className="bg-card border rounded-xl p-6 md:p-8">
                 <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-primary-foreground mb-2 font-headline">
-                    {lottery.carModel}
+                    {product.carModel}
                 </h1>
-                <p className="text-lg text-muted-foreground mb-4">{lottery.title}</p>
+                <p className="text-lg text-muted-foreground mb-4">{product.title}</p>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground mb-6 border-b pb-4">
-                    <span>{UI.LOTTERY.YEAR}: <span className="font-semibold text-foreground">{lottery.year}</span></span>
-                    <Badge variant={lottery.status === 'active' ? 'secondary' : 'destructive'}>
-                        {lottery.status === 'active' ? `Идэвхтэй` : 'Дууссан'}
-                    </Badge>
+                    <span>{UI.PRODUCT.YEAR}: <span className="font-semibold text-foreground">{product.year}</span></span>
                 </div>
-                <h2 className="text-xl font-bold text-foreground mb-4">{UI.LOTTERY.DESCRIPTION}</h2>
+                <h2 className="text-xl font-bold text-foreground mb-4">{UI.PRODUCT.DESCRIPTION}</h2>
                 <div className="text-muted-foreground leading-relaxed">
-                    <p>{lottery.description}</p>
+                    <p>{product.description}</p>
                 </div>
             </div>
         </div>
 
         <div className="lg:col-span-1">
             <div className="sticky top-24">
-                 {lottery.status === 'active' ? (
-                    <TicketPanel lottery={lottery} user={user as UserProfile | null} />
-                ) : (
-                    <Card className="bg-muted/50">
-                        <CardHeader>
-                            <CardTitle className="text-muted-foreground">Сугалаа дууссан</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">
-                                Энэхүү сугалааны үйл ажиллагаа дууссан байна.
-                            </p>
-                        </CardContent>
-                    </Card>
-                )}
+                <PurchasePanel product={product} user={user as UserProfile | null} />
             </div>
         </div>
       </div>

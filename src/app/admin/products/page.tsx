@@ -5,20 +5,20 @@ import { UI } from "@/lib/i18n";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AdminLotteryActions } from "./actions";
+import { AdminProductActions } from "./actions";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { Lottery } from "@/lib/types";
+import { Product } from "@/lib/types";
 import { collection, query, orderBy } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function LotteriesTableSkeleton() {
+function ProductsTableSkeleton() {
     return (
         <Table>
             <TableHeader>
                 <TableRow>
                     <TableHead>{UI.ADMIN.TITLE}</TableHead>
                     <TableHead>Статус</TableHead>
-                    <TableHead>{UI.LOTTERY.REMAINING_TICKETS}</TableHead>
+                    <TableHead>{UI.ADMIN.STOCK}</TableHead>
                     <TableHead className="text-right">Үйлдэл</TableHead>
                 </TableRow>
             </TableHeader>
@@ -36,47 +36,47 @@ function LotteriesTableSkeleton() {
     );
 }
 
-export default function AdminLotteriesPage() {
+export default function AdminProductsPage() {
     const firestore = useFirestore();
-    const lotteriesQuery = useMemoFirebase(() => {
+    const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'lotteries'), orderBy('createdAt', 'desc'));
+        return query(collection(firestore, 'products'), orderBy('createdAt', 'desc'));
     }, [firestore]);
 
-    const { data: lotteries, isLoading } = useCollection<Lottery>(lotteriesQuery);
+    const { data: products, isLoading } = useCollection<Product>(productsQuery);
     
     return (
         <div>
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">{UI.ADMIN.LOTTERIES}</h1>
+                <h1 className="text-3xl font-bold">{UI.ADMIN.PRODUCTS}</h1>
                 <Button asChild>
-                    <Link href="/admin/lotteries/new">{UI.ADMIN.CREATE_LOTTERY}</Link>
+                    <Link href="/admin/products/new">{UI.ADMIN.CREATE_PRODUCT}</Link>
                 </Button>
             </div>
             
             <div className="bg-card rounded-lg border">
-                {isLoading ? <LotteriesTableSkeleton /> : (
+                {isLoading ? <ProductsTableSkeleton /> : (
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>{UI.ADMIN.TITLE}</TableHead>
                                 <TableHead>Статус</TableHead>
-                                <TableHead>{UI.LOTTERY.REMAINING_TICKETS}</TableHead>
+                                <TableHead>{UI.ADMIN.STOCK}</TableHead>
                                 <TableHead className="text-right">Үйлдэл</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {lotteries?.map((lottery) => (
-                                <TableRow key={lottery.id}>
-                                    <TableCell className="font-medium">{lottery.title}</TableCell>
+                            {products?.map((product) => (
+                                <TableRow key={product.id}>
+                                    <TableCell className="font-medium">{product.title}</TableCell>
                                     <TableCell>
-                                        <Badge variant={lottery.status === 'active' ? 'secondary' : 'destructive'}>
-                                            {lottery.status === 'active' ? 'Идэвхтэй' : 'Дууссан'}
+                                        <Badge variant={product.status === 'active' ? 'secondary' : 'destructive'}>
+                                            {product.status === 'active' ? 'Идэвхтэй' : 'Архивлагдсан'}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell>{lottery.remainingTickets} / {lottery.totalTickets}</TableCell>
+                                    <TableCell>{product.stock}</TableCell>
                                     <TableCell className="text-right">
-                                        <AdminLotteryActions lottery={lottery} />
+                                        <AdminProductActions product={product} />
                                     </TableCell>
                                 </TableRow>
                             ))}

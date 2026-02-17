@@ -1,16 +1,16 @@
 'use client';
 import { UI } from "@/lib/i18n";
-import { LotteryForm } from "../../lottery-form";
+import { ProductForm } from "../../product-form";
 import { notFound, useParams } from "next/navigation";
-import { Lottery } from "@/lib/types";
+import { Product } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
 
-function EditLotteryPageSkeleton() {
+function EditProductPageSkeleton() {
   return (
     <div>
-        <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.EDIT_LOTTERY}</h1>
+        <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.EDIT_PRODUCT}</h1>
         <div className="space-y-8 max-w-2xl">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
@@ -25,30 +25,30 @@ function EditLotteryPageSkeleton() {
   );
 }
 
-export default function EditLotteryPage() {
+export default function EditProductPage() {
     const params = useParams();
     const id = params.id as string;
     const firestore = useFirestore();
 
-    const lotteryRef = useMemoFirebase(() => {
+    const productRef = useMemoFirebase(() => {
         if (!firestore || !id) return null;
-        return doc(firestore, 'lotteries', id);
+        return doc(firestore, 'products', id);
     }, [firestore, id]);
 
-    const { data: lottery, isLoading } = useDoc<Lottery>(lotteryRef);
+    const { data: product, isLoading } = useDoc<Product>(productRef);
 
-    if (!lotteryRef || isLoading) {
-        return <EditLotteryPageSkeleton />;
+    if (isLoading) {
+        return <EditProductPageSkeleton />;
     }
 
-    if (!lottery) {
+    if (!product) {
         notFound();
     }
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.EDIT_LOTTERY}</h1>
-            <LotteryForm lottery={lottery} />
+            <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.EDIT_PRODUCT}</h1>
+            <ProductForm product={product} />
         </div>
     );
 }

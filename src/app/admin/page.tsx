@@ -28,8 +28,8 @@ function StatCard({ title, icon: Icon, value }: { title: string; icon: React.Ele
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
-  const [stats, setStats] = useState<{lotteries: number | null, orders: number | null, users: number | null}>({
-      lotteries: null,
+  const [stats, setStats] = useState<{products: number | null, orders: number | null, users: number | null}>({
+      products: null,
       orders: null,
       users: null,
   });
@@ -39,19 +39,19 @@ export default function AdminDashboard() {
 
     async function fetchStats() {
         try {
-            const [lotteriesSnap, ordersSnap, usersSnap] = await Promise.all([
-                getCountFromServer(collection(firestore, "lotteries")),
+            const [productsSnap, ordersSnap, usersSnap] = await Promise.all([
+                getCountFromServer(collection(firestore, "products")),
                 getCountFromServer(collection(firestore, "orders")),
                 getCountFromServer(collection(firestore, "users")),
             ]);
             setStats({
-                lotteries: lotteriesSnap.data().count,
+                products: productsSnap.data().count,
                 orders: ordersSnap.data().count,
                 users: usersSnap.data().count,
             });
         } catch (error) {
             console.error("Error fetching stats:", error);
-            setStats({ lotteries: 0, orders: 0, users: 0 }); // Show 0 on error
+            setStats({ products: 0, orders: 0, users: 0 }); // Show 0 on error
         }
     }
     fetchStats();
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
     <div>
       <h1 className="text-3xl font-bold mb-8">{UI.ADMIN.DASHBOARD}</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard title={UI.ADMIN.LOTTERIES} icon={Ticket} value={stats.lotteries} />
+        <StatCard title={UI.ADMIN.PRODUCTS} icon={Ticket} value={stats.products} />
         <StatCard title={UI.ADMIN.ORDERS} icon={ListOrdered} value={stats.orders} />
         <StatCard title={UI.ADMIN.USERS} icon={Users} value={stats.users} />
       </div>

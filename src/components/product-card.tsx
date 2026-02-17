@@ -2,26 +2,24 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Lottery } from '@/lib/types';
+import { Product } from '@/lib/types';
 import { UI } from '@/lib/i18n';
-import { Badge } from './ui/badge';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Button } from './ui/button';
 
-interface LotteryCardProps {
-  lottery: Lottery;
+interface ProductCardProps {
+  product: Product;
   index: number;
 }
 
-export function LotteryCard({ lottery, index }: LotteryCardProps) {
+export function ProductCard({ product, index }: ProductCardProps) {
     let imageUrl;
     let imageHint = 'car';
 
-    const firstImage = lottery.images?.[0];
+    const firstImage = product.images?.[0];
 
     if (firstImage && (firstImage.startsWith('http') || firstImage.startsWith('https'))) {
         imageUrl = firstImage;
-        imageHint = lottery.carModel;
+        imageHint = product.carModel;
     } else {
         let image;
         if (firstImage) {
@@ -29,7 +27,7 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
         }
 
         if (!image) {
-            const lowerCaseCarModel = lottery.carModel.toLowerCase();
+            const lowerCaseCarModel = product.carModel.toLowerCase();
             image = PlaceHolderImages.find(img => 
                 lowerCaseCarModel.includes(img.imageHint.toLowerCase()) && 
                 !img.imageHint.toLowerCase().includes('interior')
@@ -42,12 +40,12 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
 
   return (
     <div className="transition-transform duration-300 ease-in-out hover:-translate-y-1.5">
-      <Link href={`/lotteries/${lottery.id}`} className="block group">
+      <Link href={`/products/${product.id}`} className="block group">
         <div className="bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 group-hover:shadow-2xl group-hover:shadow-accent/20">
           <div className="overflow-hidden">
             <Image
               src={imageUrl}
-              alt={lottery.title}
+              alt={product.title}
               width={800}
               height={450}
               data-ai-hint={imageHint}
@@ -55,23 +53,18 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
             />
           </div>
           <div className="p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-xl font-bold text-foreground mb-1 font-headline">{lottery.title}</h3>
-                <p className="text-sm text-muted-foreground">{lottery.carModel} - {lottery.year}</p>
-              </div>
-              <Badge variant="secondary">{`${UI.LOTTERY.REMAINING_TICKETS}: ${lottery.remainingTickets}`}</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground mt-4 line-clamp-2">{lottery.description}</p>
+            <h3 className="text-xl font-bold text-foreground mb-1 font-headline">{product.title}</h3>
+            <p className="text-sm text-muted-foreground">{product.carModel} - {product.year}</p>
+            <p className="text-sm text-muted-foreground mt-4 line-clamp-2">{product.description}</p>
             <div className="mt-6 pt-4 border-t border-border/40">
               <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Нэгж үнэ</span>
-                  <span className="text-lg font-bold text-foreground">{lottery.pricePerTicket.toLocaleString()} ₮</span>
+                  <span className="text-muted-foreground">{UI.PRODUCT.PRICE}</span>
+                  <span className="text-lg font-bold text-foreground">{product.price.toLocaleString()} ₮</span>
               </div>
             </div>
              <div className="mt-4">
                 <div className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary hover:bg-primary/90 h-10 px-4 py-2 w-full text-black font-bold">
-                    Дэлгэрэнгүйг үзэх
+                    {UI.PRODUCT.DETAILS}
                 </div>
             </div>
           </div>
@@ -80,5 +73,3 @@ export function LotteryCard({ lottery, index }: LotteryCardProps) {
     </div>
   );
 }
-
-    

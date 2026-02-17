@@ -11,7 +11,7 @@ import { UI } from '@/lib/i18n';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Lottery } from '@/lib/types';
+import { Product } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
@@ -22,16 +22,16 @@ const formSchema = z.object({
   year: z.coerce.number().min(1900, { message: 'Зөв он оруулна уу' }),
   description: z.string().min(1, { message: 'Заавал бөглөнө үү' }),
   images: z.string().url({ message: "Хүчинтэй URL хаяг оруулна уу." }).or(z.literal('')),
-  pricePerTicket: z.coerce.number().min(0, { message: 'Үнэ 0-ээс бага байж болохгүй' }),
-  totalTickets: z.coerce.number().min(1, { message: 'Тоо 1-ээс бага байж болохгүй' }),
+  price: z.coerce.number().min(0, { message: 'Үнэ 0-ээс бага байж болохгүй' }),
+  stock: z.coerce.number().min(0, { message: 'Тоо 0-ээс бага байж болохгүй' }),
 });
 
-type LotteryFormProps = {
-  lottery?: Lottery;
+type ProductFormProps = {
+  product?: Product;
 };
 
-export function LotteryForm({ lottery }: LotteryFormProps) {
-  const isEditMode = !!lottery;
+export function ProductForm({ product }: ProductFormProps) {
+  const isEditMode = !!product;
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,13 +40,13 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: lottery?.title || '',
-      carModel: lottery?.carModel || '',
-      year: lottery?.year || new Date().getFullYear(),
-      description: lottery?.description || '',
-      images: lottery?.images?.[0] || '',
-      pricePerTicket: lottery?.pricePerTicket || 50000,
-      totalTickets: lottery?.totalTickets || 10000,
+      title: product?.title || '',
+      carModel: product?.carModel || '',
+      year: product?.year || new Date().getFullYear(),
+      description: product?.description || '',
+      images: product?.images?.[0] || '',
+      price: product?.price || 50000,
+      stock: product?.stock || 100,
     },
   });
 
@@ -60,18 +60,16 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
             images: values.images ? [values.images] : [],
         };
 
-        if (isEditMode && lottery) {
-            const lotteryRef = doc(firestore, 'lotteries', lottery.id);
-            await setDoc(lotteryRef, {
+        if (isEditMode && product) {
+            const productRef = doc(firestore, 'products', product.id);
+            await setDoc(productRef, {
                 ...dataPayload,
                 updatedAt: serverTimestamp(),
             }, { merge: true });
         } else {
-            const lotteriesCollection = collection(firestore, 'lotteries');
-            await addDoc(lotteriesCollection, {
+            const productsCollection = collection(firestore, 'products');
+            await addDoc(productsCollection, {
                 ...dataPayload,
-                remainingTickets: values.totalTickets,
-                nextTicketNumber: 1,
                 status: 'active',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
@@ -80,10 +78,10 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
 
         toast({
             title: UI.GENERAL.SUCCESS,
-            description: `Сугалаа амжилттай ${isEditMode ? 'шинэчлэгдлээ' : 'үүслээ'}.`,
+            description: `Бүтээгдэхүүн амжилттай ${isEditMode ? 'шинэчлэгдлээ' : 'үүслээ'}.`,
         });
-        router.push('/admin/lotteries');
-        router.refresh(); // To ensure the list page is up-to-date
+        router.push('/admin/products');
+        router.refresh();
     } catch (error: any) {
         toast({
             variant: 'destructive',
@@ -138,17 +136,17 @@ export function LotteryForm({ lottery }: LotteryFormProps) {
             </FormItem>
           )}
         />
-        <FormField control={form.control} name="pricePerTicket" render={({ field }) => (
+        <FormField control={form.control} name="price" render={({ field }) => (
             <FormItem>
-              <FormLabel>{UI.ADMIN.PRICE_PER_TICKET}</FormLabel>
+              <FormLabel>{UI.ADMIN.PRICE}</FormLabel>
               <FormControl><Input type="number" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
-        <FormField control={form.control} name="totalTickets" render={({ field }) => (
+        <FormField control={form.control} name="stock" render={({ field }) => (
             <FormItem>
-              <FormLabel>{UI.ADMIN.TOTAL_TICKETS}</FormLabel>
-              <FormControl><Input type="number" {...field} disabled={isEditMode} /></FormControl>
+              <FormLabel>{UI.ADMIN.STOCK}</FormLabel>
+              <FormControl><Input type="number" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />

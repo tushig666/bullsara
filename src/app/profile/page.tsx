@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { redirect } from "next/navigation";
 import { collection, query, getDoc, doc, orderBy, writeBatch } from "firebase/firestore";
-import { Lottery, Order, UserProfile, Timestamp } from "@/lib/types";
+import { Product, Order, UserProfile, Timestamp } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, ShieldAlert } from "lucide-react";
@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
 type OrderGroup = {
-  lottery: Lottery | null;
+  product: Product | null;
   orders: Order[];
 }
 
@@ -100,7 +100,7 @@ function ProfileSkeleton() {
             <Skeleton className="h-10 w-48 mb-2" />
             <Skeleton className="h-6 w-64 mb-12" />
 
-            <h2 className="text-2xl font-bold tracking-tight text-primary-foreground mb-8 font-headline">Миний захиалгууд</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-primary-foreground mb-8 font-headline">{UI.PROFILE.MY_ORDERS}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {Array.from({ length: 2 }).map((_, i) => (
                     <Card key={i}>
@@ -110,7 +110,6 @@ function ProfileSkeleton() {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3">
-                                <Skeleton className="h-5 w-full" />
                                 <Skeleton className="h-5 w-full" />
                                 <Skeleton className="h-5 w-full" />
                             </div>
@@ -148,30 +147,30 @@ export default function ProfilePage() {
 
     const groupOrders = async () => {
         setIsLoading(true);
-        const groupedByLottery: Record<string, OrderGroup> = {};
-        const lotteryCache: Record<string, Lottery> = {};
+        const groupedByProduct: Record<string, OrderGroup> = {};
+        const productCache: Record<string, Product> = {};
 
         for (const order of orders) {
-            if (!groupedByLottery[order.lotteryId]) {
-                let lottery = lotteryCache[order.lotteryId];
-                if (!lottery) {
-                    const lotteryRef = doc(firestore, 'lotteries', order.lotteryId);
-                    const lotteryDoc = await getDoc(lotteryRef);
-                    if (lotteryDoc.exists()) {
-                        lottery = { id: lotteryDoc.id, ...lotteryDoc.data() } as Lottery;
-                        lotteryCache[order.lotteryId] = lottery;
+            if (!groupedByProduct[order.productId]) {
+                let product = productCache[order.productId];
+                if (!product) {
+                    const productRef = doc(firestore, 'products', order.productId);
+                    const productDoc = await getDoc(productRef);
+                    if (productDoc.exists()) {
+                        product = { id: productDoc.id, ...productDoc.data() } as Product;
+                        productCache[order.productId] = product;
                     }
                 }
 
-                groupedByLottery[order.lotteryId] = {
-                    lottery: lottery || null,
+                groupedByProduct[order.productId] = {
+                    product: product || null,
                     orders: []
                 };
             }
-            groupedByLottery[order.lotteryId].orders.push(order);
+            groupedByProduct[order.productId].orders.push(order);
         }
         
-        const finalGroups = Object.values(groupedByLottery).filter(g => g.lottery);
+        const finalGroups = Object.values(groupedByProduct).filter(g => g.product);
         setOrderGroups(finalGroups);
         setIsLoading(false);
     };
@@ -196,19 +195,19 @@ export default function ProfilePage() {
       <h1 className="text-4xl font-bold tracking-tight text-primary-foreground mb-2 font-headline">{UI.PROFILE.TITLE}</h1>
       <p className="text-muted-foreground mb-12">{user.email}</p>
 
-      <h2 className="text-2xl font-bold tracking-tight text-primary-foreground mb-8 font-headline">Миний захиалгууд</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-primary-foreground mb-8 font-headline">{UI.PROFILE.MY_ORDERS}</h2>
       
       {orderGroups.length === 0 && !isLoading ? (
-        <p className="text-muted-foreground">Танд одоогоор захиалга байхгүй байна.</p>
+        <p className="text-muted-foreground">{UI.PROFILE.NO_ORDERS}</p>
       ) : (
         <div className="space-y-8">
           {orderGroups.map((group, index) => (
-            group.lottery && (
-              <Card key={group.lottery.id + index}>
+            group.product && (
+              <Card key={group.product.id + index}>
                 <CardHeader>
-                  <CardTitle>{group.lottery.title}</CardTitle>
+                  <CardTitle>{group.product.title}</CardTitle>
                   <CardDescription>
-                    {group.lottery.carModel} - {group.lottery.year}
+                    {group.product.carModel} - {group.product.year}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -236,5 +235,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

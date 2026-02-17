@@ -1,9 +1,9 @@
 /**
  * Core Philosophy:
- * This ruleset implements a hybrid security model tailored for a lottery application.
+ * This ruleset implements a hybrid security model tailored for an e-commerce application.
  * It combines strict user-ownership for personal data (orders), role-based
- * access control for administrative functions (managing lotteries), and public read
- * access for shared data (active lotteries).
+ * access control for administrative functions (managing products), and public read
+ * access for shared data (active products).
  *
  * Data Structure:
  * User-specific data (orders) are stored in subcollections under `/users/{userId}`.
@@ -80,23 +80,12 @@ service cloud.firestore {
       allow read, write: if isOwner(userId) || isAdmin();
     }
 
-    match /lotteries/{lotteryId} {
+    match /products/{productId} {
       allow get: if true;
       allow list: if true;
       allow create: if isAdmin();
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
-    
-    match /payments/{paymentId} {
-      // NOTE: The 'userId' field MUST be denormalized onto this document for these rules to work.
-      allow get: if isOwner(resource.data.userId) || isAdmin();
-      allow list: if isAdmin(); // For now, only admins can list payments.
-      allow create: if isOwner(request.resource.data.userId); // Assumes a client (or function) can create a payment record for themselves.
-      allow update: if (isOwner(resource.data.userId) || isAdmin()) && isUserIdImmutable();
-      allow delete: if false; // Payments should generally not be deletable by clients.
-    }
   }
 }
-
-    

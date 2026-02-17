@@ -12,19 +12,18 @@ export interface UserProfile {
   createdAt: Timestamp;
 }
 
-export type LotteryStatus = 'active' | 'finished';
+export type ProductStatus = 'active' | 'archived';
 
-export interface Lottery {
+export interface Product {
   id: string;
   title: string;
   carModel: string;
   year: number;
   description: string;
   images: string[];
-  pricePerTicket: number;
-  totalTickets: number;
-  remainingTickets: number;
-  status: LotteryStatus;
+  price: number;
+  stock: number;
+  status: ProductStatus;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -34,12 +33,10 @@ export type OrderStatus = 'pending' | 'paid';
 export interface Order {
   id: string;
   userId: string;
-  lotteryId: string;
+  productId: string;
   quantity: number;
   totalPrice: number;
   status: OrderStatus;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }
-
-    

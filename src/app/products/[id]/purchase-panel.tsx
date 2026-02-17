@@ -4,18 +4,18 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UI } from '@/lib/i18n';
-import { Lottery, UserProfile } from '@/lib/types';
+import { Product, UserProfile } from '@/lib/types';
 import { Minus, Plus } from 'lucide-react';
 import { PaymentModal } from '@/components/payment-modal';
 import { useRouter } from 'next/navigation';
 import { Progress } from '@/components/ui/progress';
 
-interface TicketPanelProps {
-  lottery: Lottery;
+interface PurchasePanelProps {
+  product: Product;
   user: UserProfile | null;
 }
 
-export function TicketPanel({ lottery, user }: TicketPanelProps) {
+export function PurchasePanel({ product, user }: PurchasePanelProps) {
   const [quantity, setQuantity] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
@@ -24,7 +24,7 @@ export function TicketPanel({ lottery, user }: TicketPanelProps) {
     setQuantity((prev) => {
       const newQuantity = prev + amount;
       if (newQuantity < 1) return 1;
-      if (newQuantity > lottery.remainingTickets) return lottery.remainingTickets;
+      if (newQuantity > product.stock) return product.stock;
       return newQuantity;
     });
   };
@@ -37,33 +37,30 @@ export function TicketPanel({ lottery, user }: TicketPanelProps) {
     setIsModalOpen(true);
   };
 
-  const totalPrice = quantity * lottery.pricePerTicket;
-  const canPurchase = lottery.remainingTickets > 0;
-  const progressValue = (lottery.totalTickets - lottery.remainingTickets) / lottery.totalTickets * 100;
-
+  const totalPrice = quantity * product.price;
+  const canPurchase = product.stock > 0;
 
   return (
     <>
       <Card className="sticky top-24 shadow-lg">
         <CardHeader>
-          <CardTitle>{UI.LOTTERY.PARTICIPATE}</CardTitle>
+          <CardTitle>{UI.PRODUCT.PARTICIPATE}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm text-muted-foreground">
-                <span>{UI.LOTTERY.REMAINING_TICKETS}</span>
-                <span>{lottery.remainingTickets} / {lottery.totalTickets}</span>
+                <span>{UI.PRODUCT.STOCK}</span>
+                <span>{product.stock}</span>
             </div>
-            <Progress value={progressValue} className="h-2" />
           </div>
 
           <div className="space-y-2 text-sm border-t border-b py-4">
             <div className="flex justify-between">
                 <span className="text-muted-foreground">Нэгж үнэ (MNT):</span>
-                <span className="font-semibold text-foreground">{lottery.pricePerTicket.toLocaleString()} ₮</span>
+                <span className="font-semibold text-foreground">{product.price.toLocaleString()} ₮</span>
             </div>
              <div className="flex justify-between items-center pt-2">
-                <span className="text-muted-foreground">{UI.LOTTERY.QUANTITY}</span>
+                <span className="text-muted-foreground">{UI.PRODUCT.QUANTITY}</span>
                 <div className="flex items-center gap-2">
                 <Button
                     variant="outline"
@@ -80,7 +77,7 @@ export function TicketPanel({ lottery, user }: TicketPanelProps) {
                     size="icon"
                     className="h-8 w-8 rounded-full"
                     onClick={() => handleQuantityChange(1)}
-                    disabled={quantity >= lottery.remainingTickets || !canPurchase}
+                    disabled={quantity >= product.stock || !canPurchase}
                 >
                     <Plus className="h-4 w-4" />
                 </Button>
@@ -89,7 +86,7 @@ export function TicketPanel({ lottery, user }: TicketPanelProps) {
           </div>
           
           <div className="flex justify-between items-center text-xl font-bold">
-            <span>{UI.LOTTERY.TOTAL_PRICE}:</span>
+            <span>{UI.PRODUCT.TOTAL_PRICE}:</span>
             <span className="text-primary">{totalPrice.toLocaleString()} ₮</span>
           </div>
 
@@ -98,7 +95,7 @@ export function TicketPanel({ lottery, user }: TicketPanelProps) {
             onClick={handleBuyClick}
             disabled={!canPurchase}
           >
-            {canPurchase ? 'Захиалах' : UI.LOTTERY.NO_TICKETS_LEFT}
+            {canPurchase ? UI.PRODUCT.ORDER : UI.PRODUCT.NO_STOCK}
           </Button>
         </CardContent>
       </Card>
@@ -106,7 +103,7 @@ export function TicketPanel({ lottery, user }: TicketPanelProps) {
         <PaymentModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          lotteryId={lottery.id}
+          productId={product.id}
           quantity={quantity}
           totalPrice={totalPrice}
         />

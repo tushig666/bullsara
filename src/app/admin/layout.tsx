@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-                <Link href="/admin/lotteries"><Ticket />{UI.ADMIN.LOTTERIES}</Link>
+                <Link href="/admin/products"><Ticket />{UI.ADMIN.PRODUCTS}</Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

@@ -10,19 +10,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
-import { Lottery } from '@/lib/types';
+import { collection, addDoc, serverTimestamp, doc, runTransaction } from 'firebase/firestore';
+import { Product } from '@/lib/types';
 
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  lotteryId: string;
+  productId: string;
   quantity: number;
   totalPrice: number;
 }
 
-export function PaymentModal({ isOpen, onClose, lotteryId, quantity, totalPrice }: PaymentModalProps) {
+export function PaymentModal({ isOpen, onClose, productId, quantity, totalPrice }: PaymentModalProps) {
   const qrImage = PlaceHolderImages.find(img => img.id === 'qpay-qr');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -38,31 +38,33 @@ export function PaymentModal({ isOpen, onClose, lotteryId, quantity, totalPrice 
     setIsLoading(true);
 
     try {
-        // We run a transaction to ensure the lottery has enough tickets before creating an order.
-        const orderRef = await runTransaction(firestore, async (transaction) => {
-            const lotteryRef = doc(firestore, 'lotteries', lotteryId);
-            const lotteryDoc = await transaction.get(lotteryRef);
+        await runTransaction(firestore, async (transaction) => {
+            const productRef = doc(firestore, 'products', productId);
+            const productDoc = await transaction.get(productRef);
 
-            if (!lotteryDoc.exists()) {
-                throw new Error("Сугалаа олдсонгүй.");
+            if (!productDoc.exists()) {
+                throw new Error("Бүтээгдэхүүн олдсонгүй.");
             }
 
-            const lotteryData = lotteryDoc.data() as Lottery;
-            if (lotteryData.remainingTickets < quantity) {
+            const productData = productDoc.data() as Product;
+            if (productData.stock < quantity) {
                 throw new Error("Үлдэгдэл хүрэлцэхгүй байна.");
             }
             
             const newOrderRef = doc(collection(firestore, "users", user.uid, "orders"));
             transaction.set(newOrderRef, {
                 userId: user.uid,
-                lotteryId,
+                productId,
                 quantity,
                 totalPrice,
                 status: 'pending',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
             });
-            return newOrderRef;
+
+            // This part is for simulation, in a real app, you wouldn't mark as paid here.
+            // For now we don't decrease the stock to keep it simple.
+            // transaction.update(productRef, { stock: productData.stock - quantity });
         });
 
         toast({
