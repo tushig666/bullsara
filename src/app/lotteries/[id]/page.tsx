@@ -57,13 +57,19 @@ export default function LotteryDetailPage() {
   const { data: lottery, isLoading: isLotteryLoading, error } = useDoc<Lottery>(lotteryRef);
 
   useEffect(() => {
-    if (!isLotteryLoading && !lottery && id) {
-        // If loading is finished, we have an id, but no lottery, it's a 404
+    // This effect handles the case where the document doesn't exist.
+    // It will only call notFound() if:
+    // 1. We have tried to create a document reference (lotteryRef is not null).
+    // 2. The loading process for that document has finished (!isLotteryLoading).
+    // 3. The document was not found (lottery is null).
+    if (lotteryRef && !isLotteryLoading && !lottery) {
         notFound();
     }
-  }, [isLotteryLoading, lottery, id]);
+  }, [lotteryRef, isLotteryLoading, lottery]);
 
 
+  // Show skeleton while any data is loading, or if we haven't determined
+  // if the lottery exists yet. The useEffect above will handle the 404 case.
   if (isLotteryLoading || isUserLoading || !lottery) {
       return <LotteryDetailSkeleton />;
   }
