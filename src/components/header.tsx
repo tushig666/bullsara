@@ -12,38 +12,33 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useUser, useAuth, useFirestore } from '@/firebase';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
-import { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { UserProfile } from '@/lib/types';
 
 export function Header() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [userRole, setUserRole] = useState<'user' | 'admin' | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      setUserRole(null);
-      return;
-    }
-    
-    if (user && firestore) {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      getDoc(userDocRef).then(userDocSnap => {
-        if (userDocSnap.exists()) {
-          setUserRole(userDocSnap.data().role);
-        }
-      }).catch(error => {
-        console.error("Error fetching user role:", error);
-        setUserRole(null);
-      });
-    }
+  
+  const userDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
   }, [user, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userDocRef);
+
+  const adminRoleRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'roles_admin', user.uid);
+  }, [user, firestore]);
+
+  const { data: adminRoleDoc } = useDoc(adminRoleRef);
+  const isAdmin = !!adminRoleDoc;
 
   const handleSignOut = async () => {
     if (!auth) return;
@@ -65,8 +60,9 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
+                    <AvatarImage src={userProfile?.photoURL || undefined} alt={userProfile?.displayName || ''} />
                     <AvatarFallback>
-                      <User className="h-5 w-5" />
+                      {userProfile?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || <User className="h-5 w-5" />}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -78,7 +74,7 @@ export function Header() {
                     <span>{UI.GENERAL.PROFILE}</span>
                   </Link>
                 </DropdownMenuItem>
-                {userRole === 'admin' && (
+                {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">
                       <LayoutDashboard className="mr-2 h-4 w-4" />

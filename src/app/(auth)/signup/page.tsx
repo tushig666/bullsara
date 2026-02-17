@@ -60,11 +60,15 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
       
+      const displayName = values.email.split('@')[0];
+
       await setDoc(doc(firestore, 'users', user.uid), {
         id: user.uid,
         email: user.email,
         role: 'user',
         createdAt: serverTimestamp(),
+        displayName: displayName,
+        photoURL: '',
       });
       
       toast({

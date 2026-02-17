@@ -3,8 +3,8 @@ import { UI } from "@/lib/i18n";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
-import { redirect } from "next/navigation";
-import { collection, query, getDoc, doc, orderBy, writeBatch } from "firebase/firestore";
+import { redirect, useRouter } from "next/navigation";
+import { collection, query, getDoc, doc, orderBy, writeBatch, updateDoc } from "firebase/firestore";
 import { Product, Order, UserProfile, Timestamp } from "@/lib/types";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +12,12 @@ import { Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type OrderGroup = {
   product: Product | null;
@@ -25,28 +31,140 @@ function formatClientTimestamp(timestamp: Timestamp): string {
     return "Invalid Date";
 }
 
+const profileFormSchema = z.object({
+  displayName: z.string().max(50, { message: "Нэр 50 тэмдэгтээс хэтрэхгүй байх ёстой." }).min(2, {
+    message: "Нэр 2-оос доошгүй тэмдэгттэй байх ёстой.",
+  }),
+  photoURL: z.string().url({ message: "Хүчинтэй URL оруулна уу." }).or(z.literal('')),
+});
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+function ProfileCustomizer({ userProfile }: { userProfile: UserProfile }) {
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      displayName: userProfile.displayName || "",
+      photoURL: userProfile.photoURL || "",
+    },
+    mode: "onChange",
+  });
+
+  async function onSubmit(data: ProfileFormValues) {
+    if (!firestore || !userProfile) return;
+    setIsSubmitting(true);
+    
+    try {
+      const userRef = doc(firestore, 'users', userProfile.id);
+      await updateDoc(userRef, {
+        displayName: data.displayName,
+        photoURL: data.photoURL,
+      });
+      toast({
+        title: UI.GENERAL.SUCCESS,
+        description: "Профайл амжилттай шинэчлэгдлээ.",
+      });
+      router.refresh();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: UI.GENERAL.ERROR,
+        description: "Профайл шинэчлэхэд алдаа гарлаа: " + error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Card className="mb-12">
+      <CardHeader>
+        <CardTitle>{UI.PROFILE.EDIT_PROFILE}</CardTitle>
+        <CardDescription>{UI.PROFILE.EDIT_PROFILE_DESC}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="flex items-center gap-6">
+                <Avatar className="h-20 w-20">
+                    <AvatarImage src={form.watch('photoURL') || userProfile.photoURL || undefined} alt={userProfile.displayName} />
+                    <AvatarFallback className="text-2xl">
+                        {(userProfile.displayName || userProfile.email).charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                </Avatar>
+                <div className="flex-grow">
+                  <FormField
+                    control={form.control}
+                    name="photoURL"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{UI.PROFILE.PHOTO_URL}</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://example.com/photo.jpg" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+            </div>
+            <FormField
+              control={form.control}
+              name="displayName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{UI.PROFILE.DISPLAY_NAME}</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Таны нэр" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {UI.PROFILE.SAVE}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 function AdminPromotion() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isPromoting, setIsPromoting] = useState(false);
 
-  const userProfileRef = useMemoFirebase(() => {
+  const adminRoleRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
+    return doc(firestore, 'roles_admin', user.uid);
   }, [firestore, user]);
-
-  const { data: userProfile, isLoading } = useDoc<UserProfile>(userProfileRef);
+  
+  const { data: adminRoleDoc, isLoading } = useDoc(adminRoleRef);
 
   const handlePromote = async () => {
     if (!firestore || !user) return;
     setIsPromoting(true);
     
     const batch = writeBatch(firestore);
+    
+    // This is not standard practice, but for dev purposes, we ensure role is set on user doc.
     const userRef = doc(firestore, 'users', user.uid);
-    batch.set(userRef, { id: user.uid, role: 'admin' }, { merge: true });
-    const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-    batch.set(adminRoleRef, { isAdmin: true, promotedAt: new Date() });
+    batch.set(userRef, { role: 'admin' }, { merge: true });
+
+    // This is the source of truth for security rules.
+    const newAdminRoleRef = doc(firestore, 'roles_admin', user.uid);
+    batch.set(newAdminRoleRef, { isAdmin: true, promotedAt: new Date() });
 
     try {
       await batch.commit();
@@ -69,7 +187,7 @@ function AdminPromotion() {
     return <Skeleton className="h-36 w-full mt-12" />;
   }
 
-  if (userProfile?.role === 'admin') {
+  if (adminRoleDoc) {
     return null;
   }
 
@@ -97,12 +215,32 @@ function AdminPromotion() {
 function ProfileSkeleton() {
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <Skeleton className="h-10 w-48 mb-2" />
-            <Skeleton className="h-6 w-64 mb-12" />
+            <Card className="mb-12">
+              <CardHeader>
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-5 w-72 mt-2" />
+              </CardHeader>
+              <CardContent className="space-y-6 pt-6">
+                <div className="flex items-center gap-6">
+                  <Skeleton className="h-20 w-20 rounded-full" />
+                  <div className="flex-grow space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="flex justify-end">
+                  <Skeleton className="h-10 w-24" />
+                </div>
+              </CardContent>
+            </Card>
 
             <h2 className="text-2xl font-bold tracking-tight text-primary-foreground mb-8 font-headline">{UI.PROFILE.MY_ORDERS}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {Array.from({ length: 2 }).map((_, i) => (
+            <div className="space-y-8">
+                {Array.from({ length: 1 }).map((_, i) => (
                     <Card key={i}>
                         <CardHeader>
                             <Skeleton className="h-6 w-40" />
@@ -110,8 +248,7 @@ function ProfileSkeleton() {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3">
-                                <Skeleton className="h-5 w-full" />
-                                <Skeleton className="h-5 w-full" />
+                                <Skeleton className="h-12 w-full" />
                             </div>
                         </CardContent>
                     </Card>
@@ -125,28 +262,30 @@ export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [orderGroups, setOrderGroups] = useState<OrderGroup[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isOrdersLoading, setIsOrdersLoading] = useState(true);
+
+  const userRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userRef);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(collection(firestore, "users", user.uid, "orders"), orderBy("createdAt", "desc"));
   }, [firestore, user]);
 
-  const { data: orders } = useCollection<Order>(ordersQuery);
+  const { data: orders, isLoading: isOrdersCollectionLoading } = useCollection<Order>(ordersQuery);
 
   useEffect(() => {
-    if (isUserLoading) return;
-    if (!user) {
-        setIsLoading(false);
-        return;
+    if (isOrdersCollectionLoading) return;
+    if (!orders) {
+      setIsOrdersLoading(false);
+      return;
     };
-    if (!orders || !firestore) {
-        if(orders === null && !isUserLoading) setIsLoading(false);
-        return;
-    };
+    if (!firestore) return;
 
     const groupOrders = async () => {
-        setIsLoading(true);
         const groupedByProduct: Record<string, OrderGroup> = {};
         const productCache: Record<string, Product> = {};
 
@@ -172,32 +311,56 @@ export default function ProfilePage() {
         
         const finalGroups = Object.values(groupedByProduct).filter(g => g.product);
         setOrderGroups(finalGroups);
-        setIsLoading(false);
+        setIsOrdersLoading(false);
     };
     
     groupOrders();
-  }, [orders, firestore, user, isUserLoading]);
+  }, [orders, firestore, isOrdersCollectionLoading]);
   
-  if (isUserLoading) {
-     return <div className="flex justify-center items-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  const isLoading = isUserLoading || isProfileLoading;
+  
+  if (isLoading) {
+     return <ProfileSkeleton />;
   }
 
   if (!user) {
     redirect('/login');
   }
 
-  if (isLoading && orderGroups.length === 0) {
-    return <ProfileSkeleton />;
-  }
-
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <h1 className="text-4xl font-bold tracking-tight text-primary-foreground mb-2 font-headline">{UI.PROFILE.TITLE}</h1>
-      <p className="text-muted-foreground mb-12">{user.email}</p>
+      
+      {userProfile ? (
+        <ProfileCustomizer userProfile={userProfile} />
+      ) : (
+        <Card className="mb-12">
+            <CardHeader>
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-5 w-72 mt-2" />
+            </CardHeader>
+            <CardContent className="pt-6">
+                <Skeleton className="h-40 w-full" />
+            </CardContent>
+        </Card>
+      )}
 
       <h2 className="text-2xl font-bold tracking-tight text-primary-foreground mb-8 font-headline">{UI.PROFILE.MY_ORDERS}</h2>
       
-      {orderGroups.length === 0 && !isLoading ? (
+      {isOrdersLoading ? (
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-20 mt-1" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-3">
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+      ) : orderGroups.length === 0 ? (
         <p className="text-muted-foreground">{UI.PROFILE.NO_ORDERS}</p>
       ) : (
         <div className="space-y-8">

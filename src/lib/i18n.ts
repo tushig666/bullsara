@@ -52,6 +52,11 @@ export const UI = {
   },
   PROFILE: {
     TITLE: 'Миний профайл',
+    EDIT_PROFILE: 'Профайл засах',
+    EDIT_PROFILE_DESC: 'Энд та өөрийн дэлгэцийн нэр болон зургийг өөрчлөх боломжтой.',
+    DISPLAY_NAME: 'Дэлгэцийн нэр',
+    PHOTO_URL: 'Зургийн URL',
+    SAVE: 'Хадгалах',
     MY_ORDERS: 'Миний захиалгууд',
     NO_ORDERS: 'Танд одоогоор захиалга байхгүй байна.',
     PRODUCT_NAME: 'Бүтээгдэхүүний нэр',

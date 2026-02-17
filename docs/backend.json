@@ -8,6 +8,8 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the User entity." },
         "email": { "type": "string", "description": "The user's email address, used for login.", "format": "email" },
+        "displayName": { "type": "string", "description": "The user's public display name." },
+        "photoURL": { "type": "string", "description": "URL of the user's profile picture.", "format": "uri" },
         "role": { "type": "string", "description": "The role of the user within the system, either 'user' for customers or 'admin' for administrators." },
         "createdAt": { "type": "string", "description": "Timestamp indicating when the user account was created.", "format": "date-time" }
       },
